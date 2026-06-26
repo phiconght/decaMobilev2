@@ -2,7 +2,12 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
+import 'package:deca_mobile/app/view/app.dart';
+import 'package:deca_mobile/core/config/app_config.dart';
+import 'package:deca_mobile/core/network/api_client.dart';
+import 'package:deca_mobile/core/storage/token_storage.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AppBlocObserver extends BlocObserver {
   const AppBlocObserver();
@@ -20,14 +25,18 @@ class AppBlocObserver extends BlocObserver {
   }
 }
 
-Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
+/// Dung ha tang dung chung (ApiClient, TokenStorage) roi chay App.
+Future<void> bootstrap(AppConfig config) async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   FlutterError.onError = (details) {
     log(details.exceptionAsString(), stackTrace: details.stack);
   };
 
   Bloc.observer = const AppBlocObserver();
 
-  // Add cross-flavor configuration here
+  const tokenStorage = TokenStorage(FlutterSecureStorage());
+  final apiClient = ApiClient(config: config, tokenStorage: tokenStorage);
 
-  runApp(await builder());
+  runApp(App(apiClient: apiClient, tokenStorage: tokenStorage));
 }
