@@ -9,6 +9,7 @@ import 'package:deca_mobile/core/network/api_client.dart';
 import 'package:deca_mobile/core/storage/token_storage.dart';
 import 'package:deca_mobile/core/theme/app_theme.dart';
 import 'package:deca_mobile/courses/data/courses_repository.dart';
+import 'package:deca_mobile/exams/data/exams_repository.dart';
 import 'package:deca_mobile/home/view/home_shell.dart';
 import 'package:deca_mobile/l10n/l10n.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
@@ -43,6 +44,9 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<CatalogRepository>(
           create: (_) => CatalogRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<ExamsRepository>(
+          create: (_) => ExamsRepositoryImpl(apiClient),
         ),
       ],
       child: BlocProvider(
