@@ -1,14 +1,84 @@
+import 'dart:async';
+
 import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
 import 'package:deca_mobile/auth/data/auth_repository.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/core/widgets/quick_action_strip.dart';
+import 'package:deca_mobile/home/cubit/home_announcements_cubit.dart';
+import 'package:deca_mobile/home/cubit/home_today_cubit.dart';
 import 'package:deca_mobile/home/data/quick_actions.dart';
+import 'package:deca_mobile/home/view/widgets/announcement_banner.dart';
+import 'package:deca_mobile/home/view/widgets/post_feed_section.dart';
+import 'package:deca_mobile/home/view/widgets/today_session_card.dart';
+import 'package:deca_mobile/messages/data/messages_repository.dart';
+import 'package:deca_mobile/posts/cubit/posts_cubit.dart';
+import 'package:deca_mobile/posts/data/posts_repository.dart';
+import 'package:deca_mobile/schedule/data/timetable_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
-/// Tab Trang chu: loi chao + QuickActionStrip + (phase 2) widget tom tat.
+/// Tab Trang chu: loi chao + quick actions + thong bao trung tam + buoi hoc hom
+/// nay + bang tin. Cung cap 3 cubit rieng cho cac section dong.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final roles =
+        context.read<AuthCubit>().state.user?.roles ?? const <String>[];
+    final view = _viewForRoles(roles);
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (ctx) {
+            final cubit = HomeTodayCubit(
+              ctx.read<TimetableRepository>(),
+              view: view,
+            );
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+        BlocProvider(
+          create: (ctx) {
+            final cubit =
+                HomeAnnouncementsCubit(ctx.read<MessagesRepository>());
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+        BlocProvider(
+          create: (ctx) {
+            final cubit = PostsCubit(ctx.read<PostsRepository>(), pageSize: 5);
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+      ],
+      child: const _HomeBody(),
+    );
+  }
+
+  static String _viewForRoles(List<String> roles) {
+    if (roles.contains('STUDENT')) return 'STUDENT';
+    if (roles.contains('PARENT')) return 'PARENT';
+    if (roles.contains('TEACHER')) return 'TEACHER';
+    return 'STUDENT';
+  }
+}
+
+class _HomeBody extends StatelessWidget {
+  const _HomeBody();
+
+  Future<void> _refreshAll(BuildContext context) async {
+    await Future.wait([
+      context.read<HomeTodayCubit>().refresh(),
+      context.read<HomeAnnouncementsCubit>().refresh(),
+      context.read<PostsCubit>().refresh(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,21 +87,29 @@ class HomePage extends StatelessWidget {
     );
     final firstName = _firstName(user?.fullName);
 
-    return ListView(
-      children: [
-        _GreetingHeader(firstName: firstName),
-        const SizedBox(height: AppSpacing.xl),
-        const QuickActionStrip(actions: homeQuickActions),
-        const SizedBox(height: AppSpacing.xl),
-        // Phase 2: buoi hoc sap toi, ket qua gan day...
-      ],
+    return RefreshIndicator(
+      onRefresh: () => _refreshAll(context),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        children: [
+          _GreetingHeader(firstName: firstName),
+          const SizedBox(height: AppSpacing.lg),
+          const QuickActionStrip(actions: homeQuickActions),
+          const SizedBox(height: AppSpacing.sm),
+          const AnnouncementBanner(),
+          const TodaySessionCard(),
+          const PostFeedSection(),
+          const SizedBox(height: AppSpacing.xl),
+        ],
+      ),
     );
   }
 
   static String _firstName(String? fullName) {
     if (fullName == null || fullName.trim().isEmpty) return '';
     final parts = fullName.trim().split(RegExp(r'\s+'));
-    return parts.last; // ten (cuoi chuoi) theo quy uoc tieng Viet
+    return parts.last;
   }
 }
 
@@ -43,12 +121,15 @@ class _GreetingHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hour = DateTime.now().hour;
+    final now = DateTime.now();
+    final hour = now.hour;
     final greeting = hour < 12
         ? 'Chào buổi sáng'
         : hour < 18
             ? 'Chào buổi chiều'
             : 'Chào buổi tối';
+    final dateStr = '${_weekday(now.weekday)}, '
+        '${DateFormat('dd/MM/yyyy').format(now)}';
 
     return Container(
       width: double.infinity,
@@ -66,6 +147,9 @@ class _GreetingHeader extends StatelessWidget {
             theme.colorScheme.primaryContainer,
             theme.colorScheme.secondaryContainer,
           ],
+        ),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(AppRadii.xl),
         ),
       ),
       child: Column(
@@ -98,7 +182,7 @@ class _GreetingHeader extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Chúc bạn một ngày học tập hiệu quả.',
+            dateStr,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onPrimaryContainer
                   .withValues(alpha: 0.75),
@@ -108,4 +192,14 @@ class _GreetingHeader extends StatelessWidget {
       ),
     );
   }
+
+  static String _weekday(int weekday) => switch (weekday) {
+        DateTime.monday => 'Thứ Hai',
+        DateTime.tuesday => 'Thứ Ba',
+        DateTime.wednesday => 'Thứ Tư',
+        DateTime.thursday => 'Thứ Năm',
+        DateTime.friday => 'Thứ Sáu',
+        DateTime.saturday => 'Thứ Bảy',
+        _ => 'Chủ Nhật',
+      };
 }

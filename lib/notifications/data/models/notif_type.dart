@@ -11,6 +11,7 @@ enum NotifType {
   leaveResult,
   scheduleChanged,
   sessionReminder,
+  announcement,
   unknown;
 
   static NotifType fromString(String? s) => switch (s) {
@@ -22,6 +23,7 @@ enum NotifType {
         'LEAVE_RESULT' => NotifType.leaveResult,
         'SCHEDULE_CHANGED' => NotifType.scheduleChanged,
         'SESSION_REMINDER' => NotifType.sessionReminder,
+        'ANNOUNCEMENT' => NotifType.announcement,
         _ => NotifType.unknown,
       };
 
@@ -35,6 +37,7 @@ enum NotifType {
         NotifType.leaveResult => 'Kết quả nghỉ',
         NotifType.scheduleChanged => 'Đổi lịch',
         NotifType.sessionReminder => 'Nhắc buổi học',
+        NotifType.announcement => 'Trung tâm',
         NotifType.unknown => 'Khác',
       };
 
@@ -47,6 +50,7 @@ enum NotifType {
         NotifType.leaveResult => Icons.event_available_outlined,
         NotifType.scheduleChanged => Icons.edit_calendar_outlined,
         NotifType.sessionReminder => Icons.alarm_outlined,
+        NotifType.announcement => Icons.campaign_outlined,
         NotifType.unknown => Icons.notifications_none_outlined,
       };
 }

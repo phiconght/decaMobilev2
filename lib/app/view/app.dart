@@ -16,6 +16,7 @@ import 'package:deca_mobile/home/view/home_shell.dart';
 import 'package:deca_mobile/l10n/l10n.dart';
 import 'package:deca_mobile/messages/data/messages_repository.dart';
 import 'package:deca_mobile/notifications/data/notifications_repository.dart';
+import 'package:deca_mobile/posts/data/posts_repository.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/schedule/data/attendance_repository.dart';
 import 'package:deca_mobile/schedule/data/leave_repository.dart';
@@ -68,6 +69,9 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<MessagesRepository>(
           create: (_) => MessagesRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<PostsRepository>(
+          create: (_) => PostsRepositoryImpl(apiClient),
         ),
       ],
       child: MultiBlocProvider(

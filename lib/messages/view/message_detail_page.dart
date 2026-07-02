@@ -8,8 +8,10 @@ import 'package:deca_mobile/core/widgets/app_loading_view.dart';
 import 'package:deca_mobile/messages/cubit/message_detail_cubit.dart';
 import 'package:deca_mobile/messages/data/messages_repository.dart';
 import 'package:deca_mobile/messages/data/models/message_detail.dart';
+import 'package:deca_mobile/notifications/data/models/notif_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 /// Chi tiet tin nhan (noi dung day du). Mo tu Thong bao hoac Hop thu.
 class MessageDetailPage extends StatelessWidget {
@@ -100,10 +102,14 @@ class _Content extends StatelessWidget {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            child: SelectableText(
-              message.content,
-              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-            ),
+            // Thong bao trung tam soan bang markdown; loai khac la plain text
+            // (giu xuong dong don) nen render truc tiep.
+            child: message.type == NotifType.announcement
+                ? MarkdownBody(data: message.content, selectable: true)
+                : SelectableText(
+                    message.content,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                  ),
           ),
         ),
       ],

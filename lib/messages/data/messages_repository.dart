@@ -5,7 +5,12 @@ import 'package:deca_mobile/notifications/data/models/notif_type.dart';
 
 /// Truy xuat hop thu tin nhan (noi dung day du) cua nguoi dung dang dang nhap.
 abstract class MessagesRepository {
-  Future<List<MessageItem>> fetch({int current, int pageSize, NotifType? type});
+  Future<List<MessageItem>> fetch({
+    int current,
+    int pageSize,
+    NotifType? type,
+    bool? unread,
+  });
 
   Future<MessageDetail> detail(int id);
 
@@ -35,10 +40,12 @@ class MessagesRepositoryImpl implements MessagesRepository {
     int current = 1,
     int pageSize = 30,
     NotifType? type,
+    bool? unread,
   }) async {
     final query = <String, dynamic>{'current': current, 'pageSize': pageSize};
     final code = type == null ? null : _typeCode[type];
     if (code != null) query['type'] = code;
+    if (unread == true) query['unread'] = true;
     final data = await _api.get('/api/v1/messages/me', query: query);
     final list = (data as List<dynamic>?) ?? const [];
     return list
