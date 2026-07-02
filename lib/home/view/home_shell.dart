@@ -10,8 +10,6 @@ import 'package:deca_mobile/home/cubit/inbox_badge_cubit.dart';
 import 'package:deca_mobile/home/view/home_page.dart';
 import 'package:deca_mobile/messages/view/messages_page.dart';
 import 'package:deca_mobile/notifications/view/notifications_page.dart';
-import 'package:deca_mobile/reports/cubit/reports_cubit.dart';
-import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/reports/view/reports_page.dart';
 import 'package:deca_mobile/schedule/cubit/timetable_cubit.dart';
 import 'package:deca_mobile/schedule/data/timetable_repository.dart';
@@ -162,15 +160,8 @@ class _HomeShellState extends State<HomeShell> {
             child: const CoursesPage(),
           ),
 
-          // Tab 4: Bao cao
-          BlocProvider(
-            create: (ctx) {
-              final cubit = ReportsCubit(ctx.read<ReportsRepository>());
-              unawaited(cubit.load());
-              return cubit;
-            },
-            child: const ReportsPage(),
-          ),
+          // Tab 4: Bao cao (tu dieu huong theo vai tro, doc ReportsRepository + AuthCubit)
+          const ReportsPage(),
 
           // Tab 5: Tai khoan
           const AccountPage(),

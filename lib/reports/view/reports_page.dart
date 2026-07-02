@@ -1,131 +1,169 @@
-import 'package:deca_mobile/core/state/data_state.dart';
-import 'package:deca_mobile/core/widgets/app_empty_view.dart';
-import 'package:deca_mobile/core/widgets/app_error_view.dart';
-import 'package:deca_mobile/core/widgets/app_loading_view.dart';
-import 'package:deca_mobile/reports/cubit/reports_cubit.dart';
-import 'package:deca_mobile/reports/data/models/report.dart';
-import 'package:deca_mobile/reports/view/report_detail_page.dart';
-import 'package:deca_mobile/reports/widgets/report_card.dart';
+import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
+import 'package:deca_mobile/reports/data/models/report_models.dart';
+import 'package:deca_mobile/reports/data/reports_repository.dart';
+import 'package:deca_mobile/reports/view/class_report_page.dart';
+import 'package:deca_mobile/reports/view/student_report_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// Tab "Báo cáo" — điều hướng theo vai trò:
+/// STUDENT → báo cáo của mình; PARENT → chọn con; TEACHER → danh sách lớp.
 class ReportsPage extends StatelessWidget {
   const ReportsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ReportsCubit, DataState<List<Report>>>(
-      builder: (context, state) {
-        final items = state.data ?? const <Report>[];
-        final refresh = context.read<ReportsCubit>().refresh;
+    final repository = context.read<ReportsRepository>();
+    final user = context.select((AuthCubit c) => c.state.user);
+    final roles = user?.roles ?? const <String>[];
 
-        if (state.isLoading && items.isEmpty) {
-          return const AppLoadingView();
-        }
-        if (state.isFailure && items.isEmpty) {
-          return AppErrorView(
-            message: state.error ?? 'Đã có lỗi xảy ra',
-            onRetry: refresh,
-          );
-        }
+    if (roles.contains('TEACHER') || roles.contains('ASSISTANT')) {
+      return _TeacherClasses(repository: repository);
+    }
+    if (roles.contains('PARENT')) {
+      return _ParentReports(repository: repository);
+    }
+    // STUDENT (mặc định)
+    return StudentReportView(
+      repository: repository,
+      studentId: user?.id ?? 0,
+      canComment: false,
+    );
+  }
+}
 
-        return RefreshIndicator(
-          onRefresh: refresh,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              if (items.isEmpty) ...[
-                const SizedBox(height: 96),
-                const AppEmptyView(message: 'Chưa có kết quả bài làm.'),
-              ] else ...[
-                _OverviewCard(items: items),
-                const SizedBox(height: 16),
-                Text(
-                  'Kết quả gần đây',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                for (final report in items) ...[
-                  ReportCard(
-                    report: report,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => ReportDetailPage(report: report),
-                      ),
+/// GV: danh sách lớp → mở báo cáo lớp.
+class _TeacherClasses extends StatefulWidget {
+  const _TeacherClasses({required this.repository});
+
+  final ReportsRepository repository;
+
+  @override
+  State<_TeacherClasses> createState() => _TeacherClassesState();
+}
+
+class _TeacherClassesState extends State<_TeacherClasses> {
+  late Future<List<StudentClassOption>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.repository.myClasses();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<StudentClassOption>>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final classes = snap.data ?? const <StudentClassOption>[];
+        if (classes.isEmpty) {
+          return const Center(child: Text('Bạn chưa được phân công lớp nào.'));
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: classes.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (context, i) {
+            final c = classes[i];
+            return Card(
+              margin: EdgeInsets.zero,
+              child: ListTile(
+                title: Text(c.name),
+                subtitle: Text('${c.code} · ${c.subjectName}'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ClassReportPage(
+                      repository: widget.repository,
+                      clazz: c,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                ],
-              ],
-            ],
-          ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 }
 
-class _OverviewCard extends StatelessWidget {
-  const _OverviewCard({required this.items});
+/// PH: chọn con → xem báo cáo (được thêm nhận xét).
+class _ParentReports extends StatefulWidget {
+  const _ParentReports({required this.repository});
 
-  final List<Report> items;
+  final ReportsRepository repository;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final avg =
-        items.map((e) => e.score).reduce((a, b) => a + b) / items.length;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Expanded(
-              child: _Metric(
-                label: 'Điểm trung bình',
-                value: avg.toStringAsFixed(1),
-              ),
-            ),
-            Container(
-              width: 1,
-              height: 40,
-              color: theme.colorScheme.onPrimaryContainer
-                  .withValues(alpha: 0.2),
-            ),
-            Expanded(
-              child: _Metric(label: 'Bài đã làm', value: '${items.length}'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<_ParentReports> createState() => _ParentReportsState();
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
+class _ParentReportsState extends State<_ParentReports> {
+  late Future<List<ChildOption>> _future;
+  ChildOption? _selected;
 
-  final String label;
-  final String value;
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.repository.myChildren();
+    _future.then((children) {
+      if (mounted && children.isNotEmpty) {
+        setState(() => _selected = children.first);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme.onPrimaryContainer;
-    return Column(
-      children: [
-        Text(
-          value,
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(color: color, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: theme.textTheme.bodySmall?.copyWith(color: color)),
-      ],
+    return FutureBuilder<List<ChildOption>>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final children = snap.data ?? const <ChildOption>[];
+        if (children.isEmpty) {
+          return const Center(child: Text('Chưa liên kết học viên nào.'));
+        }
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: DropdownButtonFormField<int>(
+                initialValue: _selected?.studentId,
+                decoration: const InputDecoration(
+                  labelText: 'Chọn con',
+                  border: OutlineInputBorder(),
+                ),
+                items: children
+                    .map((c) => DropdownMenuItem(
+                          value: c.studentId,
+                          child: Text(c.fullName),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(
+                  () => _selected =
+                      children.firstWhere((c) => c.studentId == v),
+                ),
+              ),
+            ),
+            Expanded(
+              child: _selected == null
+                  ? const SizedBox.shrink()
+                  : StudentReportView(
+                      key: ValueKey(_selected!.studentId),
+                      repository: widget.repository,
+                      studentId: _selected!.studentId,
+                      canComment: true,
+                    ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
