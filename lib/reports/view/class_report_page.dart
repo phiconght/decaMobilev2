@@ -12,12 +12,14 @@ class _ClassBundle {
     this.mastery,
     this.attendance,
     this.students,
+    this.spectrum,
   );
   final List<ClassExamAverage> averages;
   final Breakdown breakdown;
   final List<TopicMastery> mastery;
   final StudentAttendanceReport attendance;
   final List<ClassStudentAverage> students;
+  final ScoreDistribution spectrum;
 }
 
 /// Báo cáo cả lớp cho giáo viên: chart tổng hợp + danh sách HV.
@@ -66,6 +68,7 @@ class _ClassReportPageState extends State<ClassReportPage> {
       widget.repository.classTopicMastery(id),
       widget.repository.classAttendance(id),
       widget.repository.classStudents(id),
+      widget.repository.classCourseSpectrum(id),
     ]);
     return _ClassBundle(
       r[0] as List<ClassExamAverage>,
@@ -73,6 +76,7 @@ class _ClassReportPageState extends State<ClassReportPage> {
       r[2] as List<TopicMastery>,
       r[3] as StudentAttendanceReport,
       r[4] as List<ClassStudentAverage>,
+      r[5] as ScoreDistribution,
     );
   }
 
@@ -122,6 +126,11 @@ class _ClassReportPageState extends State<ClassReportPage> {
                   buckets: b.breakdown.byDifficulty,
                   labelMap: difficultyLabel,
                 ),
+              ),
+              const SizedBox(height: 16),
+              SectionCard(
+                title: 'Phổ điểm toàn khóa (điểm TB HV)',
+                child: CourseScoreSpectrum(data: b.spectrum),
               ),
               const SizedBox(height: 16),
               SectionCard(

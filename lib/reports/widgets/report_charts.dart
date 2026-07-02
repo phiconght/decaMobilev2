@@ -120,6 +120,123 @@ class ScoreDistributionChart extends StatelessWidget {
   }
 }
 
+/// Phổ điểm TỔNG của khóa — histogram NGANG (trục điểm 0–10 dọc, cột đâm ngang),
+/// đường nét đứt "Điểm của bạn". Vẽ bằng CustomPaint (kiểu phổ điểm THPT).
+class CourseScoreSpectrum extends StatelessWidget {
+  const CourseScoreSpectrum({required this.data, this.height = 460, super.key});
+
+  final ScoreDistribution? data;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = data;
+    if (d == null || d.bands.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: Text('Chưa đủ dữ liệu phổ điểm')),
+      );
+    }
+    return Column(
+      children: [
+        SizedBox(
+          height: height,
+          width: double.infinity,
+          child: CustomPaint(painter: _SpectrumPainter(d)),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          d.studentScore != null
+              ? 'Con cao hơn ${d.percentile ?? 0}% các bạn · TB khóa ${d.classAverage ?? '—'} · ${d.submittedCount ?? 0} HV'
+              : 'TB khóa ${d.classAverage ?? '—'} · trung vị ${d.median ?? '—'} · ${d.submittedCount ?? 0} HV',
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+      ],
+    );
+  }
+}
+
+class _SpectrumPainter extends CustomPainter {
+  _SpectrumPainter(this.d);
+
+  final ScoreDistribution d;
+  static const _spectrum = Color(0xFFB45309);
+  static const _mine = Color(0xFFC8102E);
+  static const _axis = Color(0xFF8C8C8C);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const padL = 30.0;
+    const padR = 8.0;
+    const padT = 10.0;
+    const padB = 10.0;
+    final plotW = size.width - padL - padR;
+    final plotH = size.height - padT - padB;
+    final maxScore = d.maxScore ?? 10;
+    final maxCount = d.bands.fold<int>(1, (m, b) => b.count > m ? b.count : m);
+
+    double yOf(double s) => padT + (1 - s / maxScore) * plotH;
+
+    final grid = Paint()
+      ..color = const Color(0xFFEFEFEF)
+      ..strokeWidth = 1;
+    for (var s = 0; s <= maxScore.round(); s++) {
+      final y = yOf(s.toDouble());
+      canvas.drawLine(Offset(padL, y), Offset(size.width - padR, y), grid);
+      final tp = TextPainter(
+        text: TextSpan(
+            text: '$s', style: const TextStyle(color: _axis, fontSize: 11)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(padL - tp.width - 4, y - tp.height / 2));
+    }
+    canvas.drawLine(Offset(padL, padT), Offset(padL, size.height - padB),
+        Paint()..color = _axis);
+
+    for (final b in d.bands) {
+      final top = yOf(b.toScore);
+      final bottom = yOf(b.fromScore);
+      final w = b.count == 0 ? 0.0 : (b.count / maxCount) * plotW;
+      if (w <= 0) continue;
+      final paint = Paint()
+        ..color =
+            (b.containsStudent ? _mine : _spectrum).withValues(alpha: 0.92);
+      canvas.drawRect(
+        Rect.fromLTWH(padL, top, w, (bottom - top - 1).clamp(1, plotH)),
+        paint,
+      );
+    }
+
+    final sv = d.studentScore;
+    if (sv != null) {
+      final y = yOf(sv);
+      final dash = Paint()
+        ..color = _axis
+        ..strokeWidth = 1.5;
+      var x = padL;
+      while (x < size.width - padR) {
+        canvas.drawLine(
+            Offset(x, y),
+            Offset((x + 6).clamp(0, size.width - padR), y),
+            dash);
+        x += 10;
+      }
+      final tp = TextPainter(
+        text: TextSpan(
+          text: 'Điểm của bạn: ${sv.toString().replaceAll('.', ',')}',
+          style: const TextStyle(
+              color: _axis, fontSize: 12, fontWeight: FontWeight.w600),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(size.width - padR - tp.width, y - tp.height - 2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SpectrumPainter old) => old.d != d;
+}
+
 /// Đường xu hướng: điểm HV (%) vs TB lớp (%).
 class ScoreTrendChart extends StatelessWidget {
   const ScoreTrendChart({required this.points, super.key});

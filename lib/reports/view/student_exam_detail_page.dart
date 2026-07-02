@@ -153,16 +153,28 @@ class _StudentExamDetailPageState extends State<StudentExamDetailPage> {
                       )
                       .topicName);
 
+          // Dedupe + đảm bảo chương của BÀI THI luôn có mặt (kể cả khi HV chưa
+          // có câu đã chấm ở chương đó -> không nằm trong topicMastery).
+          final seenTopics = <int>{};
           final topicItems = <DropdownMenuItem<int>>[
             const DropdownMenuItem(value: -1, child: Text('Toàn khóa')),
-            ...widget.topics
-                .where((t) => t.topicId != null)
-                .map((t) => DropdownMenuItem(
-                      value: t.topicId,
-                      child: Text(t.topicName,
-                          overflow: TextOverflow.ellipsis),
-                    )),
           ];
+          void addTopic(int? id, String name) {
+            if (id != null && seenTopics.add(id)) {
+              topicItems.add(DropdownMenuItem(
+                value: id,
+                child: Text(name, overflow: TextOverflow.ellipsis),
+              ));
+            }
+          }
+
+          addTopic(d.topicId, d.topicName ?? 'Chương');
+          for (final t in widget.topics) {
+            addTopic(t.topicId, t.topicName);
+          }
+          // Giá trị hiện tại phải khớp 1 item; nếu không -> về "Toàn khóa".
+          final currentValue =
+              (_topicId != null && seenTopics.contains(_topicId)) ? _topicId : -1;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -202,7 +214,7 @@ class _StudentExamDetailPageState extends State<StudentExamDetailPage> {
                   Expanded(
                     child: DropdownButton<int>(
                       isExpanded: true,
-                      value: _topicId ?? -1,
+                      value: currentValue,
                       items: topicItems,
                       onChanged: (v) => _onTopicChange(v == -1 ? null : v, d),
                     ),

@@ -9,11 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class _Bundle {
-  const _Bundle(this.trend, this.breakdown, this.mastery, this.attendance);
+  const _Bundle(
+      this.trend, this.breakdown, this.mastery, this.attendance, this.spectrum);
   final List<ScoreTrendPoint> trend;
   final Breakdown breakdown;
   final List<TopicMastery> mastery;
   final StudentAttendanceReport attendance;
+  final ScoreDistribution spectrum;
 }
 
 /// Thân báo cáo của 1 học viên (HS xem mình / PH xem con).
@@ -41,7 +43,7 @@ class StudentReportView extends StatefulWidget {
 
 class _StudentReportViewState extends State<StudentReportView> {
   late Future<List<StudentClassOption>> _classesFuture;
-  List<RecentExam> _recent = const [];
+  List<RecentExam> _classExams = const [];
   List<TopicMastery> _mastery = const [];
   int? _classId;
   Future<_Bundle>? _bundleFuture;
@@ -57,20 +59,24 @@ class _StudentReportViewState extends State<StudentReportView> {
     _classesFuture = widget.fixedClass != null
         ? Future.value([widget.fixedClass!])
         : widget.repository.studentClasses(widget.studentId);
-    _classesFuture.then((classes) async {
-      final recent = await widget.repository.recentExams(widget.studentId);
-      if (!mounted) return;
-      setState(() {
-        _recent = recent;
-        if (classes.isNotEmpty) _selectClass(classes.first.classId);
-      });
+    _classesFuture.then((classes) {
+      if (mounted && classes.isNotEmpty) {
+        setState(() => _selectClass(classes.first.classId));
+      }
     });
   }
 
   void _selectClass(int classId) {
     setState(() {
       _classId = classId;
+      _classExams = const [];
       _bundleFuture = _loadBundle(classId);
+    });
+    // Tất cả bài thi của lớp (không giới hạn) cho danh sách cuộn ngang.
+    widget.repository.examHistory(widget.studentId, classId).then((list) {
+      if (mounted && _classId == classId) {
+        setState(() => _classExams = list);
+      }
     });
   }
 
@@ -80,6 +86,7 @@ class _StudentReportViewState extends State<StudentReportView> {
       widget.repository.breakdowns(widget.studentId, classId),
       widget.repository.topicMastery(widget.studentId, classId),
       widget.repository.attendance(widget.studentId, classId),
+      widget.repository.courseSpectrum(widget.studentId, classId),
     ]);
     final mastery = results[2] as List<TopicMastery>;
     _mastery = mastery;
@@ -88,6 +95,7 @@ class _StudentReportViewState extends State<StudentReportView> {
       results[1] as Breakdown,
       mastery,
       results[3] as StudentAttendanceReport,
+      results[4] as ScoreDistribution,
     );
   }
 
@@ -143,10 +151,10 @@ class _StudentReportViewState extends State<StudentReportView> {
             ),
             const SizedBox(height: 16),
 
-            Text('3 bài thi gần nhất',
+            Text('Tất cả bài thi (${_classExams.length})',
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            _RecentRow(exams: _recent, onTap: _openExam),
+            _RecentRow(exams: _classExams, onTap: _openExam),
             const SizedBox(height: 16),
 
             if (_bundleFuture != null)
@@ -166,6 +174,11 @@ class _StudentReportViewState extends State<StudentReportView> {
                   final att = b.attendance.summary;
                   return Column(
                     children: [
+                      SectionCard(
+                        title: 'Phổ điểm toàn khóa',
+                        child: CourseScoreSpectrum(data: b.spectrum),
+                      ),
+                      const SizedBox(height: 16),
                       SectionCard(
                         title: 'Xu hướng điểm trong khóa',
                         child: ScoreTrendChart(points: b.trend),
@@ -263,12 +276,18 @@ class _RecentRow extends StatelessWidget {
     if (exams.isEmpty) {
       return const Text('Chưa có bài thi đã nộp.');
     }
-    return Row(
-      children: exams.take(3).map((e) {
-        final color = scoreColor(e.ratio);
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(right: 8),
+    // Cuộn NGANG tất cả bài thi của lớp.
+    return SizedBox(
+      height: 118,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: exams.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final e = exams[i];
+          final color = scoreColor(e.ratio);
+          return SizedBox(
+            width: 150,
             child: Card(
               margin: EdgeInsets.zero,
               child: InkWell(
@@ -301,9 +320,9 @@ class _RecentRow extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        },
+      ),
     );
   }
 }

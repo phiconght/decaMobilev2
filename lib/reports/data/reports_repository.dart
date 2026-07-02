@@ -4,6 +4,7 @@ import 'package:deca_mobile/reports/data/models/report_models.dart';
 /// Hop dong du lieu bao cao. Goi cac endpoint /api/v1/reports/** cua BE.
 abstract class ReportsRepository {
   Future<List<RecentExam>> recentExams(int studentId, {int limit = 3});
+  Future<List<RecentExam>> examHistory(int studentId, int classId);
   Future<List<StudentClassOption>> studentClasses(int studentId);
   Future<ExamReportDetail> examDetail(int studentId, int examId, int classId);
   Future<List<ScoreTrendPoint>> scoreTrend(int studentId, int classId);
@@ -16,6 +17,9 @@ abstract class ReportsRepository {
   Future<ScoreDistribution> examScoreDistribution(
       int studentId, int examId, int classId);
   Future<ScoreDistribution> classExamScoreDistribution(int classId, int examId);
+  Future<ScoreDistribution> courseSpectrum(int studentId, int classId,
+      {int bandCount});
+  Future<ScoreDistribution> classCourseSpectrum(int classId, {int bandCount});
   // Giao bai (§10)
   Future<PracticeAssignmentResult> assignPractice(
       int studentId, int classId, {required int examId, int? topicId});
@@ -55,6 +59,15 @@ class ReportsRepositoryImpl implements ReportsRepository {
     final data = await _api.get(
       '$_base/students/$studentId/recent-exams',
       query: {'limit': limit},
+    );
+    return _list(data, RecentExam.fromJson);
+  }
+
+  @override
+  Future<List<RecentExam>> examHistory(int studentId, int classId) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/exam-history',
+      query: {'classId': classId},
     );
     return _list(data, RecentExam.fromJson);
   }
@@ -114,6 +127,26 @@ class ReportsRepositoryImpl implements ReportsRepository {
   ) async {
     final data =
         await _api.get('$_base/classes/$classId/exams/$examId/score-distribution');
+    return ScoreDistribution.fromJson(_map(data));
+  }
+
+  @override
+  Future<ScoreDistribution> courseSpectrum(int studentId, int classId,
+      {int bandCount = 40}) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/classes/$classId/score-distribution',
+      query: {'bandCount': bandCount},
+    );
+    return ScoreDistribution.fromJson(_map(data));
+  }
+
+  @override
+  Future<ScoreDistribution> classCourseSpectrum(int classId,
+      {int bandCount = 40}) async {
+    final data = await _api.get(
+      '$_base/classes/$classId/score-distribution',
+      query: {'bandCount': bandCount},
+    );
     return ScoreDistribution.fromJson(_map(data));
   }
 

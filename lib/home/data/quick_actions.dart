@@ -39,19 +39,6 @@ const List<QuickAction> homeQuickActions = [
     roles: ['STUDENT', 'PARENT'],
   ),
   QuickAction(
-    id: 'exam_schedule',
-    label: 'Lịch\nthi',
-    icon: Icons.event_note_outlined,
-    // Chua co page — se mo khoa khi san sang
-    enabled: false,
-  ),
-  QuickAction(
-    id: 'documents',
-    label: 'Tài\nliệu',
-    icon: Icons.folder_open_outlined,
-    enabled: false,
-  ),
-  QuickAction(
     id: 'attendance',
     label: 'Điểm\ndanh',
     icon: Icons.how_to_reg_outlined,

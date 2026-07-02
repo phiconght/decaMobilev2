@@ -51,6 +51,7 @@ class RecentExam {
 
 class ScoreTrendPoint {
   const ScoreTrendPoint({
+    required this.examId,
     required this.examName,
     required this.score,
     required this.maxScore,
@@ -58,12 +59,14 @@ class ScoreTrendPoint {
   });
 
   factory ScoreTrendPoint.fromJson(Map<String, dynamic> j) => ScoreTrendPoint(
+        examId: _i(j['examId']),
         examName: j['examName'] as String? ?? '',
         score: _d(j['score']),
         maxScore: _d(j['maxScore']),
         classAverage: _d(j['classAverage']),
       );
 
+  final int examId;
   final String examName;
   final double? score;
   final double? maxScore;
