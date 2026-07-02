@@ -8,8 +8,11 @@ import 'package:deca_mobile/core/widgets/app_empty_view.dart';
 import 'package:deca_mobile/core/widgets/app_error_view.dart';
 import 'package:deca_mobile/core/widgets/app_snackbar.dart';
 import 'package:deca_mobile/core/widgets/primary_button.dart';
+import 'package:deca_mobile/core/network/api_exception.dart';
 import 'package:deca_mobile/exams/cubit/exam_taking_cubit.dart';
+import 'package:deca_mobile/exams/data/exam_pdf_saver.dart';
 import 'package:deca_mobile/exams/data/exam_taking_repository.dart';
+import 'package:deca_mobile/exams/data/exams_repository.dart';
 import 'package:deca_mobile/exams/data/models/exam.dart';
 import 'package:deca_mobile/exams/widgets/countdown_timer.dart';
 import 'package:deca_mobile/exams/widgets/exam_result_header.dart';
@@ -84,6 +87,24 @@ class _ExamPaperViewState extends State<_ExamPaperView> {
     AppSnackBar.info(context, 'Hết giờ — đã tự động nộp bài.');
   }
 
+  /// Tai de thi PDF (bien the DE — khong dap an) va luu/mo theo nen tang.
+  Future<void> _downloadPdf(BuildContext context) async {
+    try {
+      final bytes =
+          await context.read<ExamsRepository>().examPdf(widget.exam.id);
+      await savePdf(bytes, 'De-thi_${widget.exam.code}.pdf');
+      if (context.mounted) {
+        AppSnackBar.success(context, 'Đã tải đề thi PDF');
+      }
+    } on ApiException catch (e) {
+      if (context.mounted) AppSnackBar.error(context, e.message);
+    } on Object {
+      if (context.mounted) {
+        AppSnackBar.error(context, 'Tải file thất bại');
+      }
+    }
+  }
+
   void _openJump(BuildContext context, ExamTakingState state) {
     final paper = state.paper;
     if (paper == null) return;
@@ -139,6 +160,11 @@ class _ExamPaperViewState extends State<_ExamPaperView> {
                 overflow: TextOverflow.ellipsis,
               ),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.download_outlined),
+                  tooltip: 'Tải đề PDF',
+                  onPressed: () => unawaited(_downloadPdf(context)),
+                ),
                 if (paper != null &&
                     !state.readOnly &&
                     paper.deadline != null &&

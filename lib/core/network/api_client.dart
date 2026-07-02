@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:deca_mobile/core/config/app_config.dart';
 import 'package:deca_mobile/core/network/api_exception.dart';
@@ -37,6 +38,35 @@ class ApiClient {
 
   Future<Object?> delete(String path, {Object? body}) =>
       _send('DELETE', path, body: body);
+
+  /// GET tra ve bytes tho (file nhi phan, vd PDF).
+  ///
+  /// Thanh cong khi 2xx va body KHONG phai JSON; con lai di qua [_handle]
+  /// de nem [ApiException] voi message tu vo {success,error} nhu thuong le.
+  Future<Uint8List> getBytes(String path, {Map<String, dynamic>? query}) async {
+    final token = await tokenStorage.readAccess();
+    final uri = Uri.parse('${config.baseUrl}$path').replace(
+      queryParameters: query?.map((k, v) => MapEntry(k, '$v')),
+    );
+    final http.Response res;
+    try {
+      res = await _client.get(
+        uri,
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
+      );
+    } on Object catch (_) {
+      throw const NetworkException();
+    }
+    final contentType = res.headers['content-type'] ?? '';
+    final ok = res.statusCode >= 200 &&
+        res.statusCode < 300 &&
+        !contentType.contains('json');
+    if (ok) {
+      return res.bodyBytes;
+    }
+    _handle(res); // nem ApiException tu vo JSON loi
+    throw const NetworkException(); // khong toi duoc day
+  }
 
   Future<Object?> _send(
     String method,

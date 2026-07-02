@@ -5,12 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// Mot dong de thi: ten + ngay bat dau (publishAt) + thoi luong, kem
-/// chip trang thai ben phai.
+/// chip trang thai + nut tai PDF ben phai.
 class ExamListTile extends StatelessWidget {
-  const ExamListTile({required this.exam, this.onTap, super.key});
+  const ExamListTile({
+    required this.exam,
+    this.onTap,
+    this.onDownloadPdf,
+    super.key,
+  });
 
   final Exam exam;
   final VoidCallback? onTap;
+
+  /// Hien nut tai de PDF khi khac null.
+  final VoidCallback? onDownloadPdf;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +57,13 @@ class ExamListTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
+            if (onDownloadPdf != null)
+              IconButton(
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                tooltip: 'Tải đề PDF',
+                visualDensity: VisualDensity.compact,
+                onPressed: onDownloadPdf,
+              ),
             ExamStatusChip(exam.status),
           ],
         ),

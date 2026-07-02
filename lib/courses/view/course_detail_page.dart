@@ -7,8 +7,11 @@ import 'package:deca_mobile/core/widgets/section_card.dart';
 import 'package:deca_mobile/core/widgets/status_chip.dart';
 import 'package:deca_mobile/courses/cubit/course_sessions_cubit.dart';
 import 'package:deca_mobile/courses/data/models/course.dart';
+import 'package:deca_mobile/core/network/api_exception.dart';
+import 'package:deca_mobile/core/widgets/app_snackbar.dart';
 import 'package:deca_mobile/courses/widgets/course_session_tile.dart';
 import 'package:deca_mobile/exams/cubit/exams_cubit.dart';
+import 'package:deca_mobile/exams/data/exam_pdf_saver.dart';
 import 'package:deca_mobile/exams/data/exams_repository.dart';
 import 'package:deca_mobile/exams/data/models/exam.dart';
 import 'package:deca_mobile/exams/view/exam_paper_page.dart';
@@ -194,10 +197,26 @@ class CourseDetailPage extends StatelessWidget {
                 builder: (_) => ExamPaperPage(exam: published[i]),
               ),
             ),
+            onDownloadPdf: () => unawaited(_downloadPdf(context, published[i])),
           ),
         ],
       ],
     );
+  }
+
+  /// Tai de thi PDF (bien the DE) va luu/mo theo nen tang.
+  static Future<void> _downloadPdf(BuildContext context, Exam exam) async {
+    try {
+      final bytes = await context.read<ExamsRepository>().examPdf(exam.id);
+      await savePdf(bytes, 'De-thi_${exam.code}.pdf');
+      if (context.mounted) {
+        AppSnackBar.success(context, 'Đã tải đề thi PDF');
+      }
+    } on ApiException catch (e) {
+      if (context.mounted) AppSnackBar.error(context, e.message);
+    } on Object {
+      if (context.mounted) AppSnackBar.error(context, 'Tải file thất bại');
+    }
   }
 
   /// De thi DA/DANG PHAT = da co moc phat (publishAt) va moc do <= hien tai.
