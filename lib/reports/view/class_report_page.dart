@@ -37,11 +37,25 @@ class ClassReportPage extends StatefulWidget {
 
 class _ClassReportPageState extends State<ClassReportPage> {
   late Future<_ClassBundle> _future;
+  int? _distExamId;
+  ScoreDistribution? _distribution;
 
   @override
   void initState() {
     super.initState();
     _future = _load();
+    _future.then((b) {
+      if (b.averages.isNotEmpty && mounted) {
+        _onDistExamChange(b.averages.first.examId);
+      }
+    });
+  }
+
+  Future<void> _onDistExamChange(int examId) async {
+    setState(() => _distExamId = examId);
+    final d = await widget.repository
+        .classExamScoreDistribution(widget.clazz.classId, examId);
+    if (mounted) setState(() => _distribution = d);
   }
 
   Future<_ClassBundle> _load() async {
@@ -107,6 +121,31 @@ class _ClassReportPageState extends State<ClassReportPage> {
                 child: BreakdownBarChart(
                   buckets: b.breakdown.byDifficulty,
                   labelMap: difficultyLabel,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SectionCard(
+                title: 'Phổ điểm theo bài thi',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (b.averages.isNotEmpty)
+                      DropdownButton<int>(
+                        isExpanded: true,
+                        value: _distExamId,
+                        items: b.averages
+                            .map((a) => DropdownMenuItem(
+                                  value: a.examId,
+                                  child: Text(a.examName,
+                                      overflow: TextOverflow.ellipsis),
+                                ))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) _onDistExamChange(v);
+                        },
+                      ),
+                    ScoreDistributionChart(data: _distribution),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),

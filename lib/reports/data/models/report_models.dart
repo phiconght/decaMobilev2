@@ -146,7 +146,10 @@ class ExamReportDetail {
     required this.rank,
     required this.submittedCount,
     required this.classSize,
+    required this.topicId,
+    required this.topicName,
     required this.breakdown,
+    required this.distribution,
   });
 
   factory ExamReportDetail.fromJson(Map<String, dynamic> j) => ExamReportDetail(
@@ -157,8 +160,14 @@ class ExamReportDetail {
         rank: (j['rank'] as num?)?.toInt(),
         submittedCount: (j['submittedCount'] as num?)?.toInt(),
         classSize: (j['classSize'] as num?)?.toInt(),
+        topicId: (j['topicId'] as num?)?.toInt(),
+        topicName: j['topicName'] as String?,
         breakdown:
             Breakdown.fromJson(j['breakdown'] as Map<String, dynamic>? ?? {}),
+        distribution: j['distribution'] == null
+            ? null
+            : ScoreDistribution.fromJson(
+                j['distribution'] as Map<String, dynamic>),
       );
 
   final String examName;
@@ -168,7 +177,115 @@ class ExamReportDetail {
   final int? rank;
   final int? submittedCount;
   final int? classSize;
+  final int? topicId;
+  final String? topicName;
   final Breakdown breakdown;
+  final ScoreDistribution? distribution;
+}
+
+class ScoreBand {
+  const ScoreBand({
+    required this.index,
+    required this.fromScore,
+    required this.toScore,
+    required this.count,
+    required this.containsStudent,
+  });
+
+  factory ScoreBand.fromJson(Map<String, dynamic> j) => ScoreBand(
+        index: _i(j['index']),
+        fromScore: _d(j['fromScore']) ?? 0,
+        toScore: _d(j['toScore']) ?? 0,
+        count: _i(j['count']),
+        containsStudent: j['containsStudent'] as bool? ?? false,
+      );
+
+  final int index;
+  final double fromScore;
+  final double toScore;
+  final int count;
+  final bool containsStudent;
+}
+
+class ScoreDistribution {
+  const ScoreDistribution({
+    required this.maxScore,
+    required this.bands,
+    required this.studentScore,
+    required this.percentile,
+    required this.classAverage,
+    required this.median,
+    required this.highest,
+    required this.lowest,
+    required this.rank,
+    required this.submittedCount,
+  });
+
+  factory ScoreDistribution.fromJson(Map<String, dynamic> j) => ScoreDistribution(
+        maxScore: _d(j['maxScore']),
+        bands: (j['bands'] as List<dynamic>? ?? [])
+            .map((e) => ScoreBand.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        studentScore: _d(j['studentScore']),
+        percentile: _d(j['percentile']),
+        classAverage: _d(j['classAverage']),
+        median: _d(j['median']),
+        highest: _d(j['highest']),
+        lowest: _d(j['lowest']),
+        rank: (j['rank'] as num?)?.toInt(),
+        submittedCount: (j['submittedCount'] as num?)?.toInt(),
+      );
+
+  final double? maxScore;
+  final List<ScoreBand> bands;
+  final double? studentScore;
+  final double? percentile;
+  final double? classAverage;
+  final double? median;
+  final double? highest;
+  final double? lowest;
+  final int? rank;
+  final int? submittedCount;
+}
+
+class PracticeAssignmentResult {
+  const PracticeAssignmentResult({
+    required this.examName,
+    required this.topicName,
+    required this.numQuestions,
+    required this.easy,
+    required this.medium,
+    required this.hard,
+    required this.multipleChoice,
+    required this.trueFalse,
+    required this.deadline,
+  });
+
+  factory PracticeAssignmentResult.fromJson(Map<String, dynamic> j) {
+    final bd = j['byDifficulty'] as Map<String, dynamic>? ?? {};
+    final bt = j['byType'] as Map<String, dynamic>? ?? {};
+    return PracticeAssignmentResult(
+      examName: j['examName'] as String? ?? '',
+      topicName: j['topicName'] as String?,
+      numQuestions: _i(j['numQuestions']),
+      easy: _i(bd['easy']),
+      medium: _i(bd['medium']),
+      hard: _i(bd['hard']),
+      multipleChoice: _i(bt['multipleChoice']),
+      trueFalse: _i(bt['trueFalse']),
+      deadline: _dt(j['deadline']),
+    );
+  }
+
+  final String examName;
+  final String? topicName;
+  final int numQuestions;
+  final int easy;
+  final int medium;
+  final int hard;
+  final int multipleChoice;
+  final int trueFalse;
+  final DateTime? deadline;
 }
 
 class AttendanceSummary {
@@ -247,17 +364,20 @@ class ClassStudentAverage {
 
 class ClassExamAverage {
   const ClassExamAverage({
+    required this.examId,
     required this.examName,
     required this.avgScore,
     required this.maxScore,
   });
 
   factory ClassExamAverage.fromJson(Map<String, dynamic> j) => ClassExamAverage(
+        examId: _i(j['examId']),
         examName: j['examName'] as String? ?? '',
         avgScore: _d(j['avgScore']),
         maxScore: _d(j['maxScore']),
       );
 
+  final int examId;
   final String examName;
   final double? avgScore;
   final double? maxScore;

@@ -95,7 +95,9 @@ class _HomeBody extends StatelessWidget {
         children: [
           _GreetingHeader(firstName: firstName),
           const SizedBox(height: AppSpacing.lg),
-          const QuickActionStrip(actions: homeQuickActions),
+          QuickActionStrip(
+            actions: quickActionsFor(user?.roles ?? const <String>[]),
+          ),
           const SizedBox(height: AppSpacing.sm),
           const AnnouncementBanner(),
           const TodaySessionCard(),

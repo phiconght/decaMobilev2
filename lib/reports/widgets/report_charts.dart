@@ -29,6 +29,97 @@ class _Empty extends StatelessWidget {
       );
 }
 
+/// Phổ điểm lớp (histogram): cột chứa HV màu xanh, còn lại xám; + percentile.
+class ScoreDistributionChart extends StatelessWidget {
+  const ScoreDistributionChart({required this.data, super.key});
+
+  final ScoreDistribution? data;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = data;
+    if (d == null || d.bands.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: Text('Chưa đủ dữ liệu phổ điểm')),
+      );
+    }
+    final maxCount = d.bands.fold<int>(0, (m, b) => b.count > m ? b.count : m);
+    final groups = <BarChartGroupData>[];
+    for (var i = 0; i < d.bands.length; i++) {
+      final b = d.bands[i];
+      groups.add(
+        BarChartGroupData(x: i, barRods: [
+          BarChartRodData(
+            toY: b.count.toDouble(),
+            width: 16,
+            color: b.containsStudent ? _self : const Color(0xFFBFBFBF),
+            borderRadius: BorderRadius.zero,
+          ),
+        ]),
+      );
+    }
+    return Column(
+      children: [
+        SizedBox(
+          height: 200,
+          child: BarChart(
+            BarChartData(
+              maxY: (maxCount == 0 ? 1 : maxCount).toDouble() + 1,
+              barGroups: groups,
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(),
+                rightTitles: const AxisTitles(),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 26,
+                    getTitlesWidget: (v, _) =>
+                        Text('${v.toInt()}', style: const TextStyle(fontSize: 9)),
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (v, _) {
+                      final idx = v.toInt();
+                      if (idx < 0 || idx >= d.bands.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          d.bands[idx].toScore.toStringAsFixed(0),
+                          style: const TextStyle(fontSize: 8),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              gridData: const FlGridData(drawVerticalLine: false),
+              borderData: FlBorderData(show: false),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        if (d.studentScore != null)
+          Text(
+            'Con cao hơn ${d.percentile ?? 0}% các bạn'
+            '${d.rank != null ? ' · hạng ${d.rank}/${d.submittedCount ?? '—'}' : ''}',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          )
+        else
+          Text(
+            'TB lớp ${d.classAverage ?? '—'} · trung vị ${d.median ?? '—'} · '
+            '${d.submittedCount ?? 0} HV',
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+      ],
+    );
+  }
+}
+
 /// Đường xu hướng: điểm HV (%) vs TB lớp (%).
 class ScoreTrendChart extends StatelessWidget {
   const ScoreTrendChart({required this.points, super.key});

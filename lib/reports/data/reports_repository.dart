@@ -7,14 +7,21 @@ abstract class ReportsRepository {
   Future<List<StudentClassOption>> studentClasses(int studentId);
   Future<ExamReportDetail> examDetail(int studentId, int examId, int classId);
   Future<List<ScoreTrendPoint>> scoreTrend(int studentId, int classId);
-  Future<Breakdown> breakdowns(int studentId, int classId);
+  Future<Breakdown> breakdowns(int studentId, int classId, {int? topicId});
   Future<List<TopicMastery>> topicMastery(int studentId, int classId);
   Future<StudentAttendanceReport> attendance(int studentId, int classId);
   Future<List<ChildOption>> myChildren();
   Future<List<StudentClassOption>> myClasses();
+  // Pho diem (§12)
+  Future<ScoreDistribution> examScoreDistribution(
+      int studentId, int examId, int classId);
+  Future<ScoreDistribution> classExamScoreDistribution(int classId, int examId);
+  // Giao bai (§10)
+  Future<PracticeAssignmentResult> assignPractice(
+      int studentId, int classId, {required int examId, int? topicId});
   // Lop
   Future<List<ClassExamAverage>> classExamAverages(int classId);
-  Future<Breakdown> classBreakdowns(int classId);
+  Future<Breakdown> classBreakdowns(int classId, {int? topicId});
   Future<List<TopicMastery>> classTopicMastery(int classId);
   Future<StudentAttendanceReport> classAttendance(int classId);
   Future<List<ClassStudentAverage>> classStudents(int classId);
@@ -79,10 +86,49 @@ class ReportsRepositoryImpl implements ReportsRepository {
   }
 
   @override
-  Future<Breakdown> breakdowns(int studentId, int classId) async {
-    final data =
-        await _api.get('$_base/students/$studentId/classes/$classId/breakdowns');
+  Future<Breakdown> breakdowns(int studentId, int classId, {int? topicId}) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/classes/$classId/breakdowns',
+      query: topicId == null ? null : {'topicId': topicId},
+    );
     return Breakdown.fromJson(_map(data));
+  }
+
+  @override
+  Future<ScoreDistribution> examScoreDistribution(
+    int studentId,
+    int examId,
+    int classId,
+  ) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/exams/$examId/score-distribution',
+      query: {'classId': classId},
+    );
+    return ScoreDistribution.fromJson(_map(data));
+  }
+
+  @override
+  Future<ScoreDistribution> classExamScoreDistribution(
+    int classId,
+    int examId,
+  ) async {
+    final data =
+        await _api.get('$_base/classes/$classId/exams/$examId/score-distribution');
+    return ScoreDistribution.fromJson(_map(data));
+  }
+
+  @override
+  Future<PracticeAssignmentResult> assignPractice(
+    int studentId,
+    int classId, {
+    required int examId,
+    int? topicId,
+  }) async {
+    final data = await _api.post(
+      '$_base/students/$studentId/classes/$classId/assign-practice',
+      body: {'examId': examId, if (topicId != null) 'topicId': topicId},
+    );
+    return PracticeAssignmentResult.fromJson(_map(data));
   }
 
   @override
@@ -118,8 +164,11 @@ class ReportsRepositoryImpl implements ReportsRepository {
   }
 
   @override
-  Future<Breakdown> classBreakdowns(int classId) async {
-    final data = await _api.get('$_base/classes/$classId/breakdowns');
+  Future<Breakdown> classBreakdowns(int classId, {int? topicId}) async {
+    final data = await _api.get(
+      '$_base/classes/$classId/breakdowns',
+      query: topicId == null ? null : {'topicId': topicId},
+    );
     return Breakdown.fromJson(_map(data));
   }
 

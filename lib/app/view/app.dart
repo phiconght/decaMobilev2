@@ -5,12 +5,14 @@ import 'package:deca_mobile/auth/data/auth_repository.dart';
 import 'package:deca_mobile/auth/view/login_page.dart';
 import 'package:deca_mobile/auth/view/splash_page.dart';
 import 'package:deca_mobile/catalog/data/catalog_repository.dart';
+import 'package:deca_mobile/coin/data/coin_repository.dart';
 import 'package:deca_mobile/core/network/api_client.dart';
 import 'package:deca_mobile/core/storage/token_storage.dart';
 import 'package:deca_mobile/core/theme/app_theme.dart';
 import 'package:deca_mobile/courses/data/courses_repository.dart';
 import 'package:deca_mobile/exams/data/exam_taking_repository.dart';
 import 'package:deca_mobile/exams/data/exams_repository.dart';
+import 'package:deca_mobile/fee/data/fee_repository.dart';
 import 'package:deca_mobile/home/cubit/inbox_badge_cubit.dart';
 import 'package:deca_mobile/home/view/home_shell.dart';
 import 'package:deca_mobile/l10n/l10n.dart';
@@ -72,6 +74,12 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<PostsRepository>(
           create: (_) => PostsRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<FeeRepository>(
+          create: (_) => FeeRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<CoinRepository>(
+          create: (_) => CoinRepositoryImpl(apiClient),
         ),
       ],
       child: MultiBlocProvider(

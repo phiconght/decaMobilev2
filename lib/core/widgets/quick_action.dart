@@ -12,6 +12,7 @@ class QuickAction {
     this.builder,
     this.onTap,
     this.enabled = true,
+    this.roles = const [],
   });
 
   final String id;
@@ -22,4 +23,11 @@ class QuickAction {
   /// Hanh dong tuy chinh (vd doi tab). Uu tien truoc [builder].
   final void Function(BuildContext context)? onTap;
   final bool enabled;
+
+  /// Vai tro duoc thay button nay. Rong = hien voi moi vai tro.
+  final List<String> roles;
+
+  /// Button co hien voi nguoi dung mang [userRoles] khong.
+  bool visibleFor(List<String> userRoles) =>
+      roles.isEmpty || roles.any(userRoles.contains);
 }

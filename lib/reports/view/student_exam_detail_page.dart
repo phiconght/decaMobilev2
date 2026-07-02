@@ -3,14 +3,18 @@ import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/reports/widgets/report_charts.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-/// Chi tiết 1 bài thi: điểm/TB lớp/hạng + breakdown độ khó & loại câu.
+/// Chi tiết 1 bài thi: ĐIỂM (theo bài) + phổ điểm + NĂNG LỰC (theo chương,
+/// dropdown mặc định chương của bài thi). PH có nút "Giao bài cho con".
 class StudentExamDetailPage extends StatefulWidget {
   const StudentExamDetailPage({
     required this.repository,
     required this.studentId,
     required this.classId,
     required this.exam,
+    this.topics = const [],
+    this.canAssign = false,
     super.key,
   });
 
@@ -18,6 +22,8 @@ class StudentExamDetailPage extends StatefulWidget {
   final int studentId;
   final int classId;
   final RecentExam exam;
+  final List<TopicMastery> topics;
+  final bool canAssign;
 
   @override
   State<StudentExamDetailPage> createState() => _StudentExamDetailPageState();
@@ -25,12 +31,94 @@ class StudentExamDetailPage extends StatefulWidget {
 
 class _StudentExamDetailPageState extends State<StudentExamDetailPage> {
   late Future<ExamReportDetail> _future;
+  int? _topicId; // chương đang chọn; -1 sentinel = toàn khóa (null)
+  Breakdown? _breakdown;
+  bool _assigning = false;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
     _future = widget.repository
         .examDetail(widget.studentId, widget.exam.examId, widget.classId);
+  }
+
+  Future<void> _onTopicChange(int? value, ExamReportDetail d) async {
+    setState(() => _topicId = value);
+    if (value == d.topicId) {
+      setState(() => _breakdown = d.breakdown);
+      return;
+    }
+    final b = await widget.repository
+        .breakdowns(widget.studentId, widget.classId, topicId: value);
+    if (mounted) setState(() => _breakdown = b);
+  }
+
+  Future<void> _assign() async {
+    if (_topicId == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Giao bài cho con'),
+        content: const Text(
+          'Hệ thống chọn 10 bài trong chương đang xem — độ khó/dạng bài '
+          'nghiêng về phần con đang yếu (số liệu đang hiển thị).',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Hủy')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Giao bài')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _assigning = true);
+    try {
+      final r = await widget.repository.assignPractice(
+        widget.studentId,
+        widget.classId,
+        examId: widget.exam.examId,
+        topicId: _topicId,
+      );
+      if (mounted) _showResult(r);
+    } on Object catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _assigning = false);
+    }
+  }
+
+  void _showResult(PracticeAssignmentResult r) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Đã giao bài luyện tập'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(r.examName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('Chuyên đề: ${r.topicName ?? '—'}'),
+            Text('Số câu: ${r.numQuestions} — Dễ ${r.easy}/TB ${r.medium}/Khó ${r.hard}'),
+            Text('Dạng: TN ${r.multipleChoice}/ĐS ${r.trueFalse}'),
+            if (r.deadline != null)
+              Text('Hạn: ${DateFormat('dd/MM/yyyy').format(r.deadline!)}'),
+          ],
+        ),
+        actions: [
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Đóng')),
+        ],
+      ),
+    );
   }
 
   @override
@@ -47,9 +135,39 @@ class _StudentExamDetailPageState extends State<StudentExamDetailPage> {
             return const Center(child: Text('Không tải được chi tiết bài thi'));
           }
           final d = snap.data!;
+          if (!_initialized) {
+            _initialized = true;
+            _topicId = d.topicId;
+            _breakdown = d.breakdown;
+          }
+          final breakdown = _breakdown ?? d.breakdown;
+          final topicLabel = _topicId == null
+              ? 'Toàn khóa'
+              : (widget.topics
+                      .firstWhere(
+                        (t) => t.topicId == _topicId,
+                        orElse: () => TopicMastery(
+                            topicName: d.topicName ?? 'Chương',
+                            masteryPct: null,
+                            gradedCount: 0),
+                      )
+                      .topicName);
+
+          final topicItems = <DropdownMenuItem<int>>[
+            const DropdownMenuItem(value: -1, child: Text('Toàn khóa')),
+            ...widget.topics
+                .where((t) => t.topicId != null)
+                .map((t) => DropdownMenuItem(
+                      value: t.topicId,
+                      child: Text(t.topicName,
+                          overflow: TextOverflow.ellipsis),
+                    )),
+          ];
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // Tầng ĐIỂM
               Card(
                 margin: EdgeInsets.zero,
                 child: Padding(
@@ -57,37 +175,71 @@ class _StudentExamDetailPageState extends State<StudentExamDetailPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
+                      _Metric(label: 'Điểm', value: d.score?.toStringAsFixed(2) ?? '—'),
                       _Metric(
-                        label: 'Điểm',
-                        value: d.score?.toStringAsFixed(2) ?? '—',
-                      ),
+                          label: 'TB lớp',
+                          value: d.classAverage?.toStringAsFixed(2) ?? '—'),
                       _Metric(
-                        label: 'TB lớp',
-                        value: d.classAverage?.toStringAsFixed(2) ?? '—',
-                      ),
-                      _Metric(
-                        label: 'Xếp hạng',
-                        value: d.rank != null
-                            ? '${d.rank}/${d.submittedCount ?? '—'}'
-                            : '—',
-                      ),
+                          label: 'Xếp hạng',
+                          value: d.rank != null
+                              ? '${d.rank}/${d.submittedCount ?? '—'}'
+                              : '—'),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               SectionCard(
-                title: 'Đúng/sai theo độ khó',
+                title: 'Phổ điểm của lớp',
+                child: ScoreDistributionChart(data: d.distribution),
+              ),
+              const SizedBox(height: 16),
+
+              // Chọn chương + nút giao bài
+              Row(
+                children: [
+                  const Text('Chương: '),
+                  Expanded(
+                    child: DropdownButton<int>(
+                      isExpanded: true,
+                      value: _topicId ?? -1,
+                      items: topicItems,
+                      onChanged: (v) => _onTopicChange(v == -1 ? null : v, d),
+                    ),
+                  ),
+                ],
+              ),
+              if (widget.canAssign)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _topicId == null
+                      ? const Tooltip(
+                          message: 'Chọn 1 chương để giao bài',
+                          child: FilledButton.tonal(
+                            onPressed: null,
+                            child: Text('Giao bài cho con'),
+                          ),
+                        )
+                      : FilledButton.icon(
+                          onPressed: _assigning ? null : _assign,
+                          icon: const Icon(Icons.assignment_add),
+                          label: const Text('Giao bài cho con'),
+                        ),
+                ),
+              const SizedBox(height: 8),
+
+              SectionCard(
+                title: 'Năng lực chương "$topicLabel" — độ khó (tổng hợp mọi bài)',
                 child: BreakdownBarChart(
-                  buckets: d.breakdown.byDifficulty,
+                  buckets: breakdown.byDifficulty,
                   labelMap: difficultyLabel,
                 ),
               ),
               const SizedBox(height: 16),
               SectionCard(
-                title: 'Đúng/sai theo loại câu',
+                title: 'Năng lực chương "$topicLabel" — loại câu',
                 child: BreakdownBarChart(
-                  buckets: d.breakdown.byType,
+                  buckets: breakdown.byType,
                   labelMap: typeLabel,
                 ),
               ),

@@ -42,6 +42,7 @@ class StudentReportView extends StatefulWidget {
 class _StudentReportViewState extends State<StudentReportView> {
   late Future<List<StudentClassOption>> _classesFuture;
   List<RecentExam> _recent = const [];
+  List<TopicMastery> _mastery = const [];
   int? _classId;
   Future<_Bundle>? _bundleFuture;
   bool _byType = false;
@@ -80,10 +81,12 @@ class _StudentReportViewState extends State<StudentReportView> {
       widget.repository.topicMastery(widget.studentId, classId),
       widget.repository.attendance(widget.studentId, classId),
     ]);
+    final mastery = results[2] as List<TopicMastery>;
+    _mastery = mastery;
     return _Bundle(
       results[0] as List<ScoreTrendPoint>,
       results[1] as Breakdown,
-      results[2] as List<TopicMastery>,
+      mastery,
       results[3] as StudentAttendanceReport,
     );
   }
@@ -98,6 +101,8 @@ class _StudentReportViewState extends State<StudentReportView> {
           studentId: widget.studentId,
           classId: classId,
           exam: e,
+          topics: _mastery,
+          canAssign: widget.canComment,
         ),
       ),
     );
