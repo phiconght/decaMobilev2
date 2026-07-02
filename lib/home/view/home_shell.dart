@@ -18,6 +18,29 @@ import 'package:deca_mobile/schedule/view/timetable_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// Cho phep cac widget con doi tab hien tai (vd tien ich "Diem danh" tren
+/// Trang chu nhay sang tab TKB). Dat quanh HomeShell.
+class HomeShellScope extends InheritedWidget {
+  const HomeShellScope({
+    required this.switchTab,
+    required super.child,
+    super.key,
+  });
+
+  /// index tab: 0 Trang chu · 1 TKB · 2 Khoa hoc · 3 Bao cao · 4 Tai khoan.
+  final void Function(int index) switchTab;
+
+  static HomeShellScope of(BuildContext context) {
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<HomeShellScope>();
+    assert(scope != null, 'HomeShellScope khong tim thay trong cay widget');
+    return scope!;
+  }
+
+  @override
+  bool updateShouldNotify(HomeShellScope oldWidget) => false;
+}
+
 /// Khung sau dang nhap: NavigationBar 5 tab + IndexedStack (giu state moi tab).
 ///
 /// Tab 1 — Trang chu (dashboard + quick action strip)
@@ -35,6 +58,8 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
+  void _switchTab(int index) => setState(() => _index = index);
+
   static const _titles = [
     'Trang chủ',
     'Thời khóa biểu',
@@ -45,6 +70,13 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    return HomeShellScope(
+      switchTab: _switchTab,
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_index]),

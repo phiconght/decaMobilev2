@@ -10,6 +10,7 @@ import 'package:deca_mobile/core/widgets/primary_button.dart';
 import 'package:deca_mobile/core/widgets/section_card.dart';
 import 'package:deca_mobile/schedule/cubit/timetable_cubit.dart';
 import 'package:deca_mobile/schedule/data/attendance_repository.dart';
+import 'package:deca_mobile/schedule/data/models/qr_payload.dart';
 import 'package:deca_mobile/schedule/data/models/timetable_item.dart';
 import 'package:deca_mobile/schedule/data/timetable_repository.dart';
 import 'package:deca_mobile/schedule/view/attendance_page.dart';
@@ -57,18 +58,37 @@ class SessionDetailPage extends StatelessWidget {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  /// HV quet QR diem danh: chan neu quet nham QR phong / QR buoi khac.
   Future<void> _scanAndDo(
     BuildContext context, {
     required bool isCheckout,
   }) async {
-    final token = await Navigator.push<String>(
+    final raw = await Navigator.push<String>(
       context,
       MaterialPageRoute<String>(
         builder: (_) => QrScanPage(isCheckout: isCheckout),
       ),
     );
-    if (token == null) return;
-    if (!context.mounted) return;
+    if (raw == null || !context.mounted) return;
+
+    final String token;
+    switch (QrPayload.parse(raw)) {
+      case AttendanceQr(sessionId: final sid, token: final t):
+        if (sid != item.sessionId) {
+          AppSnackBar.error(context, 'Mã QR của buổi học khác.');
+          return;
+        }
+        token = t;
+      case RawToken(value: final v):
+        token = v; // QR cu (token tran)
+      case RoomQr():
+        AppSnackBar.error(
+          context,
+          'Đây là mã chấm công của giáo viên, không dùng để điểm danh.',
+        );
+        return;
+    }
+
     try {
       final repo = context.read<TimetableRepository>();
       if (isCheckout) {
@@ -80,6 +100,49 @@ class SessionDetailPage extends StatelessWidget {
       AppSnackBar.success(
         context,
         isCheckout ? 'Đã check-out' : 'Đã check-in',
+      );
+      unawaited(context.read<TimetableCubit>().refresh());
+      Navigator.pop(context);
+    } on ApiException catch (e) {
+      if (context.mounted) AppSnackBar.error(context, e.message);
+    }
+  }
+
+  /// GV quet QR phong de cham cong day. Chi chap nhan QR phong (DECA-ROOM).
+  Future<void> _scanTeacher(
+    BuildContext context, {
+    required bool isCheckout,
+  }) async {
+    final raw = await Navigator.push<String>(
+      context,
+      MaterialPageRoute<String>(
+        builder: (_) => QrScanPage(
+          isCheckout: isCheckout,
+          title: isCheckout
+              ? 'Quét QR phòng — chấm công ra'
+              : 'Quét QR phòng — chấm công vào',
+        ),
+      ),
+    );
+    if (raw == null || !context.mounted) return;
+
+    final payload = QrPayload.parse(raw);
+    if (payload is! RoomQr) {
+      AppSnackBar.error(context, 'Hãy quét mã QR dán tại phòng học.');
+      return;
+    }
+
+    try {
+      final repo = context.read<AttendanceRepository>();
+      if (isCheckout) {
+        await repo.teacherCheckout(item.sessionId, payload.code);
+      } else {
+        await repo.teacherCheckin(item.sessionId, payload.code);
+      }
+      if (!context.mounted) return;
+      AppSnackBar.success(
+        context,
+        isCheckout ? 'Đã chấm công ra' : 'Đã chấm công vào',
       );
       unawaited(context.read<TimetableCubit>().refresh());
       Navigator.pop(context);
@@ -208,7 +271,12 @@ class SessionDetailPage extends StatelessWidget {
           future: future,
         );
       case 'TEACHER':
-        return _teacherActions(context, perms, isCancelled: isCancelled);
+        return _teacherActions(
+          context,
+          perms,
+          isCancelled: isCancelled,
+          today: today,
+        );
       default:
         return const [];
     }
@@ -314,9 +382,12 @@ class SessionDetailPage extends StatelessWidget {
     BuildContext context,
     List<String> perms, {
     required bool isCancelled,
+    required bool today,
   }) {
     if (isCancelled || !perms.contains('CLASS:READ')) return const [];
-    return [
+
+    final actions = <Widget>[
+      // Hang 1: quan ly diem danh HV.
       Row(
         children: [
           Expanded(
@@ -355,5 +426,53 @@ class SessionDetailPage extends StatelessWidget {
         ],
       ),
     ];
+
+    // Hang 2: cham cong day cua GV (chi buoi hom nay).
+    if (today) {
+      final tStatus = item.teacherAttendanceStatus;
+      final checkedIn = tStatus == 'DUNG_GIO' || tStatus == 'VAO_TRE';
+      actions.add(const SizedBox(height: 12));
+      actions.add(
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.login),
+                label: const Text('Chấm công vào'),
+                onPressed: checkedIn
+                    ? null
+                    : () => _scanTeacher(context, isCheckout: false),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.logout),
+                label: const Text('Chấm công ra'),
+                onPressed: checkedIn
+                    ? () => _scanTeacher(context, isCheckout: true)
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      );
+      if (checkedIn) {
+        actions.add(const SizedBox(height: 8));
+        actions.add(
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              tStatus == 'VAO_TRE'
+                  ? 'Đã chấm công vào (Vào trễ)'
+                  : 'Đã chấm công vào (Đúng giờ)',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        );
+      }
+    }
+
+    return actions;
   }
 }

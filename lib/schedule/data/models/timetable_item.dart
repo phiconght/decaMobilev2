@@ -49,6 +49,7 @@ class TimetableItem {
     this.studentName,
     this.attendanceStatus,
     this.onLeave = false,
+    this.teacherAttendanceStatus,
   });
 
   factory TimetableItem.fromJson(Map<String, dynamic> json) {
@@ -72,6 +73,7 @@ class TimetableItem {
       attendanceStatus:
           attendanceStatusFromString(json['attendanceStatus'] as String?),
       onLeave: (json['onLeave'] as bool?) ?? false,
+      teacherAttendanceStatus: json['teacherAttendanceStatus'] as String?,
     );
   }
 
@@ -93,6 +95,9 @@ class TimetableItem {
   final String? studentName;
   final AttendanceStatus? attendanceStatus;
   final bool onLeave;
+
+  /// Trang thai cham cong GV (view TEACHER): 'DUNG_GIO'|'VAO_TRE'|'VANG', null neu chua cham.
+  final String? teacherAttendanceStatus;
 
   /// 'mon khoi' (vd 'Toan 10') hoac fallback ten lop.
   String get title {

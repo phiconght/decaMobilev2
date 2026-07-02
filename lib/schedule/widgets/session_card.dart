@@ -1,4 +1,6 @@
+import 'package:deca_mobile/core/theme/app_colors.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
+import 'package:deca_mobile/schedule/data/models/teacher_work.dart';
 import 'package:deca_mobile/schedule/data/models/timetable_item.dart';
 import 'package:deca_mobile/schedule/widgets/attendance_badge.dart';
 import 'package:deca_mobile/schedule/widgets/status_chips.dart';
@@ -159,6 +161,21 @@ class SessionCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ] else if (view == 'TEACHER') ...[
+                // Cham cong GV + chevron.
+                const SizedBox(width: AppSpacing.sm),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _TeacherWorkChip(status: item.teacherAttendanceStatus),
+                    const SizedBox(height: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ],
             ],
           ),
@@ -181,5 +198,39 @@ class SessionCard extends StatelessWidget {
           : subject;
     }
     return item.className;
+  }
+}
+
+/// Chip nho hien trang thai cham cong GV tren card TKB (view TEACHER).
+class _TeacherWorkChip extends StatelessWidget {
+  const _TeacherWorkChip({required this.status});
+
+  /// 'DUNG_GIO' | 'VAO_TRE' | 'VANG' | null (chua cham).
+  final String? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = teacherAttendanceStatusFromString(status);
+    final color = switch (s) {
+      TeacherAttendanceStatus.dungGio => AppColors.success,
+      TeacherAttendanceStatus.vaoTre => AppColors.warning,
+      TeacherAttendanceStatus.vang => AppColors.danger,
+      TeacherAttendanceStatus.chuaCham => AppColors.neutral,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: const BorderRadius.all(Radius.circular(AppRadii.pill)),
+      ),
+      child: Text(
+        teacherAttendanceLabel(s),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
+        ),
+      ),
+    );
   }
 }

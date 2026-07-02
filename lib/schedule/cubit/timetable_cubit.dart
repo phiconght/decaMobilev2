@@ -48,17 +48,16 @@ class TimetableState extends Equatable {
     return result;
   }
 
-  /// Cac buoi trong ngay [selectedDay], sap theo gio bat dau, da loc theo con.
-  List<TimetableItem> get daySessions {
+  /// Toan bo buoi trong TUAN, da loc theo con, sap theo ngay roi gio bat dau.
+  List<TimetableItem> get weekSessions {
     final filter = childFilter;
     final list = items
-        .where(
-          (e) =>
-              _sameDay(e.date, selectedDay) &&
-              (filter == null || e.studentId == filter),
-        )
+        .where((e) => filter == null || e.studentId == filter)
         .toList()
-      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+      ..sort((a, b) {
+        final c = a.date.compareTo(b.date);
+        return c != 0 ? c : a.startTime.compareTo(b.startTime);
+      });
     return list;
   }
 

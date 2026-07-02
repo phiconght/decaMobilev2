@@ -11,7 +11,8 @@ class QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isEnabled = action.enabled && action.builder != null;
+    final isEnabled =
+        action.enabled && (action.onTap != null || action.builder != null);
     final disabledFg =
         theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.45);
     final color = isEnabled ? theme.colorScheme.primary : disabledFg;
@@ -23,9 +24,7 @@ class QuickActionButton extends StatelessWidget {
       width: 76,
       child: InkWell(
         onTap: isEnabled
-            ? () => Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(builder: action.builder!),
-                )
+            ? () => _handleTap(context)
             : () => _showComingSoon(context),
         borderRadius: AppRadii.rlg,
         child: Column(
@@ -58,6 +57,18 @@ class QuickActionButton extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _handleTap(BuildContext context) {
+    if (action.onTap != null) {
+      action.onTap!(context);
+      return;
+    }
+    if (action.builder != null) {
+      Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: action.builder!),
+      );
+    }
   }
 
   void _showComingSoon(BuildContext context) {

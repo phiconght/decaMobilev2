@@ -1,5 +1,6 @@
 import 'package:deca_mobile/catalog/view/catalog_page.dart';
 import 'package:deca_mobile/core/widgets/quick_action.dart';
+import 'package:deca_mobile/home/view/home_shell.dart';
 import 'package:deca_mobile/payment/view/payment_page.dart';
 import 'package:flutter/material.dart';
 
@@ -37,9 +38,12 @@ const List<QuickAction> homeQuickActions = [
     id: 'attendance',
     label: 'Điểm\ndanh',
     icon: Icons.how_to_reg_outlined,
-    enabled: false,
+    // Nhay sang tab TKB (index 1) — hub thao tac diem danh / cham cong.
+    onTap: _goToTimetable,
   ),
 ];
 
 Widget _buildCatalog(BuildContext context) => const CatalogPage();
 Widget _buildPayment(BuildContext context) => const PaymentPage();
+void _goToTimetable(BuildContext context) =>
+    HomeShellScope.of(context).switchTab(1);

@@ -96,7 +96,9 @@ class _QrViewState extends State<QrView> {
       mainAxisSize: MainAxisSize.min,
       children: [
         QrImageView(
-          data: _token!.token,
+          // Prefix DECA-ATT giup app HV phan biet QR diem danh voi QR phong,
+          // va chan quet nham buoi khac (sessionId nhung trong ma).
+          data: 'DECA-ATT:${widget.sessionId}:${_token!.token}',
           size: 220,
         ),
         AppSpacing.gapMd,

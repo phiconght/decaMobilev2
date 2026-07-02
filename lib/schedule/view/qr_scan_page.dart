@@ -9,10 +9,13 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 ///
 /// Tra ve `String?` token qua [Navigator.pop]. Khong tu goi checkin/checkout.
 class QrScanPage extends StatefulWidget {
-  const QrScanPage({required this.isCheckout, super.key});
+  const QrScanPage({required this.isCheckout, this.title, super.key});
 
   /// `true` neu dang quet de check-out, `false` cho check-in.
   final bool isCheckout;
+
+  /// Tieu de tuy chinh (vd 'Quét QR phòng — chấm công'); null -> mac dinh theo [isCheckout].
+  final String? title;
 
   @override
   State<QrScanPage> createState() => _QrScanPageState();
@@ -77,7 +80,8 @@ class _QrScanPageState extends State<QrScanPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.isCheckout ? 'Quét QR check-out' : 'Quét QR check-in',
+          widget.title ??
+              (widget.isCheckout ? 'Quét QR check-out' : 'Quét QR check-in'),
         ),
         actions: [
           IconButton(
