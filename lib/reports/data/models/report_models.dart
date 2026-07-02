@@ -124,14 +124,17 @@ class TopicMastery {
     required this.topicName,
     required this.masteryPct,
     required this.gradedCount,
+    this.topicId,
   });
 
   factory TopicMastery.fromJson(Map<String, dynamic> j) => TopicMastery(
+        topicId: (j['topicId'] as num?)?.toInt(),
         topicName: j['topicName'] as String? ?? 'Chưa phân chương',
         masteryPct: _d(j['masteryPct']),
         gradedCount: _i(j['gradedCount']),
       );
 
+  final int? topicId;
   final String topicName;
   final double? masteryPct;
   final int gradedCount;

@@ -133,67 +133,96 @@ class _GreetingHeader extends StatelessWidget {
     final dateStr = '${_weekday(now.weekday)}, '
         '${DateFormat('dd/MM/yyyy').format(now)}';
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.xl,
-        AppSpacing.lg,
-        AppSpacing.xl,
+    // Gradient do ruby (Mobile_MauSac_DoTrang.md §4.2). 2 vong tron trang mo
+    // goc phai tao chieu sau, khong lam roi.
+    const white90 = Color(0xE6FFFFFF);
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(
+        bottom: Radius.circular(AppRadii.xl),
       ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.secondaryContainer,
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFC84151), Color(0xFF8A1C29)],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -36,
+              right: -24,
+              child: _decorCircle(120),
+            ),
+            Positioned(
+              top: 34,
+              right: 44,
+              child: _decorCircle(64),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.xl,
+                AppSpacing.lg,
+                AppSpacing.xl,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.school_rounded,
+                        size: 20,
+                        color: white90,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        'Trung tâm đào tạo',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: white90,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    firstName.isNotEmpty
+                        ? '$greeting, $firstName!'
+                        : '$greeting!',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    dateStr,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.78),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(AppRadii.xl),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.school_rounded,
-                size: 20,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Trung tâm đào tạo',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            firstName.isNotEmpty ? '$greeting, $firstName!' : '$greeting!',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            dateStr,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer
-                  .withValues(alpha: 0.75),
-            ),
-          ),
-        ],
       ),
     );
   }
+
+  /// Vong tron trang mo trang tri (chieu sau, khong loe loet).
+  Widget _decorCircle(double size) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.06),
+        ),
+      );
 
   static String _weekday(int weekday) => switch (weekday) {
         DateTime.monday => 'Thứ Hai',

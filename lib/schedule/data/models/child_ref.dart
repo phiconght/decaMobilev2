@@ -13,14 +13,14 @@ class ChildRef {
   final Color color;
 }
 
-/// Bang mau gan cho tung con.
+/// Bang mau gan cho tung con. Tranh dai do-hong de khong lan mau thuong hieu.
 const List<Color> kChildColors = [
-  Color(0xFF2563EB),
-  Color(0xFF16A34A),
-  Color(0xFFF59E0B),
-  Color(0xFF7C3AED),
-  Color(0xFFDB2777),
-  Color(0xFF0891B2),
-  Color(0xFFCA8A04),
-  Color(0xFFDC2626),
+  Color(0xFF3949AB), // indigo
+  Color(0xFF00897B), // teal
+  Color(0xFFEF8F00), // amber
+  Color(0xFF8E24AA), // tim
+  Color(0xFF0288D1), // cyan
+  Color(0xFF43A047), // la
+  Color(0xFF6D4C41), // nau
+  Color(0xFF546E7A), // xam xanh
 ];

@@ -2,16 +2,16 @@ import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-// Màu thống nhất (khớp SPEC §7).
-const _correct = Color(0xFF52C41A);
-const _incorrect = Color(0xFFFF4D4F);
-const _ungraded = Color(0xFFD9D9D9);
-const _coMat = Color(0xFF52C41A);
-const _tre = Color(0xFFFAAD14);
-const _vang = Color(0xFFFF4D4F);
-const _coPhep = Color(0xFF1677FF);
-const _self = Color(0xFF1677FF);
-const _classAvg = Color(0xFFFAAD14);
+// Màu thống nhất — chủ đạo đỏ-trắng (Mobile_MauSac_DoTrang.md §4.6).
+const _correct = Color(0xFF1E8E3E);
+const _incorrect = Color(0xFF8C1D18);
+const _ungraded = Color(0xFFD8CCCB);
+const _coMat = Color(0xFF1E8E3E);
+const _tre = Color(0xFFB26A00);
+const _vang = Color(0xFF8C1D18);
+const _coPhep = Color(0xFF3A5A80);
+const _self = Color(0xFFBE2A3D); // mình = màu thương hiệu
+const _classAvg = Color(0xFFB98A2C); // TB lớp = vàng đồng
 
 const difficultyLabel = {'EASY': 'Dễ', 'MEDIUM': 'TB', 'HARD': 'Khó'};
 const typeLabel = {

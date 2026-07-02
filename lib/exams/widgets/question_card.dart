@@ -165,8 +165,8 @@ class _TypeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color) = switch (type) {
       QuestionType.multipleChoice => ('Trắc nghiệm', AppColors.info),
-      QuestionType.essay => ('Tự luận', const Color(0xFF7C3AED)),
-      QuestionType.trueFalse => ('Đúng – Sai', const Color(0xFF0891B2)),
+      QuestionType.essay => ('Tự luận', const Color(0xFF5E35B1)), // tím trầm
+      QuestionType.trueFalse => ('Đúng – Sai', const Color(0xFF00796B)), // teal
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
