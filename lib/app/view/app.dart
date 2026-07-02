@@ -11,8 +11,11 @@ import 'package:deca_mobile/core/theme/app_theme.dart';
 import 'package:deca_mobile/courses/data/courses_repository.dart';
 import 'package:deca_mobile/exams/data/exam_taking_repository.dart';
 import 'package:deca_mobile/exams/data/exams_repository.dart';
+import 'package:deca_mobile/home/cubit/inbox_badge_cubit.dart';
 import 'package:deca_mobile/home/view/home_shell.dart';
 import 'package:deca_mobile/l10n/l10n.dart';
+import 'package:deca_mobile/messages/data/messages_repository.dart';
+import 'package:deca_mobile/notifications/data/notifications_repository.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/schedule/data/attendance_repository.dart';
 import 'package:deca_mobile/schedule/data/leave_repository.dart';
@@ -60,14 +63,31 @@ class App extends StatelessWidget {
         RepositoryProvider<ExamTakingRepository>(
           create: (_) => ExamTakingRepositoryImpl(apiClient),
         ),
+        RepositoryProvider<NotificationsRepository>(
+          create: (_) => NotificationsRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<MessagesRepository>(
+          create: (_) => MessagesRepositoryImpl(apiClient),
+        ),
       ],
-      child: BlocProvider(
-        create: (context) {
-          final auth = AuthCubit(context.read<AuthRepository>());
-          apiClient.onUnauthorized = auth.forceLogout; // Strategy: 401 -> Login
-          unawaited(auth.restoreSession());
-          return auth;
-        },
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) {
+              final auth = AuthCubit(context.read<AuthRepository>());
+              // Strategy: 401 -> Login
+              apiClient.onUnauthorized = auth.forceLogout;
+              unawaited(auth.restoreSession());
+              return auth;
+            },
+          ),
+          BlocProvider(
+            create: (context) => InboxBadgeCubit(
+              context.read<NotificationsRepository>(),
+              context.read<MessagesRepository>(),
+            ),
+          ),
+        ],
         child: MaterialApp(
           title: 'Trung tâm đào tạo',
           debugShowCheckedModeBanner: false,

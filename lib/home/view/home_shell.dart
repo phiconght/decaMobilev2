@@ -6,6 +6,7 @@ import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/courses/cubit/courses_cubit.dart';
 import 'package:deca_mobile/courses/data/courses_repository.dart';
 import 'package:deca_mobile/courses/view/courses_page.dart';
+import 'package:deca_mobile/home/cubit/inbox_badge_cubit.dart';
 import 'package:deca_mobile/home/view/home_page.dart';
 import 'package:deca_mobile/messages/view/messages_page.dart';
 import 'package:deca_mobile/notifications/view/notifications_page.dart';
@@ -58,7 +59,24 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Nap so chua doc cho badge ngay khi vao khung chinh (da dang nhap).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(context.read<InboxBadgeCubit>().refresh());
+    });
+  }
+
   void _switchTab(int index) => setState(() => _index = index);
+
+  /// Mo mot trang inbox roi lam moi badge khi quay lai.
+  Future<void> _openInbox(Widget page) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => page),
+    );
+    if (mounted) unawaited(context.read<InboxBadgeCubit>().refresh());
+  }
 
   static const _titles = [
     'Trang chủ',
@@ -81,20 +99,26 @@ class _HomeShellState extends State<HomeShell> {
       appBar: AppBar(
         title: Text(_titles[_index]),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            tooltip: 'Thông báo',
-            onPressed: () => Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(
-                builder: (_) => const NotificationsPage(),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline),
-            tooltip: 'Tin nhắn',
-            onPressed: () => Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(builder: (_) => const MessagesPage()),
+          BlocBuilder<InboxBadgeCubit, InboxBadgeState>(
+            builder: (context, badge) => Row(
+              children: [
+                IconButton(
+                  icon: _BadgeIcon(
+                    icon: Icons.notifications_outlined,
+                    count: badge.notifications,
+                  ),
+                  tooltip: 'Thông báo',
+                  onPressed: () => _openInbox(const NotificationsPage()),
+                ),
+                IconButton(
+                  icon: _BadgeIcon(
+                    icon: Icons.chat_bubble_outline,
+                    count: badge.messages,
+                  ),
+                  tooltip: 'Tin nhắn',
+                  onPressed: () => _openInbox(const MessagesPage()),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
@@ -183,6 +207,23 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Icon kem badge so chua doc (an khi = 0).
+class _BadgeIcon extends StatelessWidget {
+  const _BadgeIcon({required this.icon, required this.count});
+
+  final IconData icon;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return Icon(icon);
+    return Badge(
+      label: Text(count > 99 ? '99+' : '$count'),
+      child: Icon(icon),
     );
   }
 }
