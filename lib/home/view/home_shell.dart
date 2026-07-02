@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:deca_mobile/account/view/account_page.dart';
+import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/courses/cubit/courses_cubit.dart';
 import 'package:deca_mobile/courses/data/courses_repository.dart';
@@ -11,9 +12,9 @@ import 'package:deca_mobile/notifications/view/notifications_page.dart';
 import 'package:deca_mobile/reports/cubit/reports_cubit.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/reports/view/reports_page.dart';
-import 'package:deca_mobile/schedule/cubit/schedule_cubit.dart';
-import 'package:deca_mobile/schedule/data/schedule_repository.dart';
-import 'package:deca_mobile/schedule/view/schedule_page.dart';
+import 'package:deca_mobile/schedule/cubit/timetable_cubit.dart';
+import 'package:deca_mobile/schedule/data/timetable_repository.dart';
+import 'package:deca_mobile/schedule/view/timetable_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -76,11 +77,23 @@ class _HomeShellState extends State<HomeShell> {
           // Tab 2: Thoi khoa bieu
           BlocProvider(
             create: (ctx) {
-              final cubit = ScheduleCubit(ctx.read<ScheduleRepository>());
+              final roles =
+                  ctx.read<AuthCubit>().state.user?.roles ?? const <String>[];
+              final view = roles.contains('STUDENT')
+                  ? 'STUDENT'
+                  : roles.contains('PARENT')
+                      ? 'PARENT'
+                      : roles.contains('TEACHER')
+                          ? 'TEACHER'
+                          : 'STUDENT';
+              final cubit = TimetableCubit(
+                ctx.read<TimetableRepository>(),
+                initialView: view,
+              );
               unawaited(cubit.load());
               return cubit;
             },
-            child: const SchedulePage(),
+            child: const TimetablePage(),
           ),
 
           // Tab 3: Khoa hoc cua toi

@@ -5,17 +5,21 @@ import 'package:deca_mobile/core/storage/token_storage.dart';
 /// Thong tin nguoi dung — dung cho ca login va man Tai khoan.
 class AuthUser {
   const AuthUser({
+    required this.id,
     required this.username,
     required this.fullName,
     this.email,
+    this.phone,
     this.roles = const [],
     this.permissions = const [],
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
+        id: (json['id'] as num?)?.toInt() ?? 0,
         username: json['username'] as String,
         fullName: (json['fullName'] ?? json['username']) as String,
         email: json['email'] as String?,
+        phone: json['phone'] as String?,
         roles: ((json['roles'] as List?) ?? const [])
             .map((e) => '$e')
             .toList(),
@@ -24,9 +28,11 @@ class AuthUser {
             .toList(),
       );
 
+  final int id;
   final String username;
   final String fullName;
   final String? email;
+  final String? phone;
   final List<String> roles;
   final List<String> permissions;
 }

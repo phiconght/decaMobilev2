@@ -9,11 +9,14 @@ import 'package:deca_mobile/core/network/api_client.dart';
 import 'package:deca_mobile/core/storage/token_storage.dart';
 import 'package:deca_mobile/core/theme/app_theme.dart';
 import 'package:deca_mobile/courses/data/courses_repository.dart';
+import 'package:deca_mobile/exams/data/exam_taking_repository.dart';
 import 'package:deca_mobile/exams/data/exams_repository.dart';
 import 'package:deca_mobile/home/view/home_shell.dart';
 import 'package:deca_mobile/l10n/l10n.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
-import 'package:deca_mobile/schedule/data/schedule_repository.dart';
+import 'package:deca_mobile/schedule/data/attendance_repository.dart';
+import 'package:deca_mobile/schedule/data/leave_repository.dart';
+import 'package:deca_mobile/schedule/data/timetable_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -39,14 +42,23 @@ class App extends StatelessWidget {
         RepositoryProvider<ReportsRepository>(
           create: (_) => ReportsRepositoryImpl(apiClient),
         ),
-        RepositoryProvider<ScheduleRepository>(
-          create: (_) => ScheduleRepositoryImpl(apiClient),
+        RepositoryProvider<TimetableRepository>(
+          create: (_) => TimetableRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<LeaveRepository>(
+          create: (_) => LeaveRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<AttendanceRepository>(
+          create: (_) => AttendanceRepositoryImpl(apiClient),
         ),
         RepositoryProvider<CatalogRepository>(
           create: (_) => CatalogRepositoryImpl(apiClient),
         ),
         RepositoryProvider<ExamsRepository>(
           create: (_) => ExamsRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<ExamTakingRepository>(
+          create: (_) => ExamTakingRepositoryImpl(apiClient),
         ),
       ],
       child: BlocProvider(

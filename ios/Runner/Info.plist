@@ -9,6 +9,8 @@
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng dùng camera để quét mã QR điểm danh tại lớp học.</string>
 	<key>CFBundleDisplayName</key>
 	<string>$(FLAVOR_APP_NAME)</string>
 	<key>CFBundleExecutable</key>

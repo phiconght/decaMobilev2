@@ -48,14 +48,17 @@ abstract final class AppTheme {
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(50),
+          // KHONG dung Size.fromHeight (min-width = infinity): button dat trong
+          // Row/ngu canh khong gioi han be rong se lam sap layout ca man hinh.
+          // Full-width do noi dat button quyet dinh (PrimaryButton/SizedBox).
+          minimumSize: const Size(64, 50),
           shape: const RoundedRectangleBorder(borderRadius: AppRadii.rmd),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(50),
+          minimumSize: const Size(64, 50),
           shape: const RoundedRectangleBorder(borderRadius: AppRadii.rmd),
           side: BorderSide(color: scheme.outline),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
