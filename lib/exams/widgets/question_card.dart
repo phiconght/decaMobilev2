@@ -1,5 +1,6 @@
 import 'package:deca_mobile/core/theme/app_colors.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
+import 'package:deca_mobile/core/widgets/math_text.dart';
 import 'package:deca_mobile/exams/data/models/exam_paper.dart';
 import 'package:deca_mobile/exams/data/models/exam_question.dart';
 import 'package:deca_mobile/exams/widgets/exam_image.dart';
@@ -48,7 +49,10 @@ class QuestionCard extends StatelessWidget {
             if (question.questionText != null &&
                 question.questionText!.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
-              Text(question.questionText!, style: theme.textTheme.bodyLarge),
+              MathText(
+                question.questionText!,
+                style: theme.textTheme.bodyLarge,
+              ),
             ],
             if (question.questionImage != null) ...[
               const SizedBox(height: AppSpacing.md),
@@ -334,7 +338,7 @@ class _OptionTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (option.text != null && option.text!.isNotEmpty)
-                    Text(option.text!, style: theme.textTheme.bodyMedium),
+                    MathText(option.text!, style: theme.textTheme.bodyMedium),
                   if (option.image != null) ...[
                     if (option.text != null && option.text!.isNotEmpty)
                       const SizedBox(height: AppSpacing.sm),
@@ -390,7 +394,7 @@ class _TfRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (item.text != null && item.text!.isNotEmpty)
-            Text(item.text!, style: theme.textTheme.bodyMedium),
+            MathText(item.text!, style: theme.textTheme.bodyMedium),
           if (item.image != null) ...[
             const SizedBox(height: AppSpacing.sm),
             ExamImage(url: item.image!, height: 140),
@@ -499,7 +503,10 @@ class _EssayAnswer extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(question.essayAnswer!, style: theme.textTheme.bodyMedium),
+                MathText(
+                  question.essayAnswer!,
+                  style: theme.textTheme.bodyMedium,
+                ),
                 if (question.essayAnswerImage != null) ...[
                   const SizedBox(height: AppSpacing.sm),
                   ExamImage(url: question.essayAnswerImage!, height: 160),
