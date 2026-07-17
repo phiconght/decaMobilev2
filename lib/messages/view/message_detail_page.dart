@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:deca_mobile/core/network/api_client.dart';
+import 'package:deca_mobile/core/network/url_helper.dart';
 import 'package:deca_mobile/core/state/data_state.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/core/util/time_ago.dart';
@@ -68,6 +70,7 @@ class _Content extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final config = context.read<ApiClient>().config;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
@@ -105,7 +108,16 @@ class _Content extends StatelessWidget {
             // Thong bao trung tam soan bang markdown; loai khac la plain text
             // (giu xuong dong don) nen render truc tiep.
             child: message.type == NotifType.announcement
-                ? MarkdownBody(data: message.content, selectable: true)
+                ? MarkdownBody(
+                    data: message.content,
+                    selectable: true,
+                    sizedImageBuilder: (imgConfig) => Image.network(
+                      config.toAbsoluteUrl(imgConfig.uri.toString()),
+                      width: imgConfig.width,
+                      height: imgConfig.height,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  )
                 : SelectableText(
                     message.content,
                     style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),

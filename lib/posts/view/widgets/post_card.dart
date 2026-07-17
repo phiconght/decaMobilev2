@@ -1,7 +1,10 @@
+import 'package:deca_mobile/core/network/api_client.dart';
+import 'package:deca_mobile/core/network/url_helper.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/core/util/time_ago.dart';
 import 'package:deca_mobile/posts/data/models/post_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Anh bia bo goc — fallback icon khi khong co / loi tai.
 class _Cover extends StatelessWidget {
@@ -25,8 +28,9 @@ class _Cover extends StatelessWidget {
       ),
     );
     if (url == null || url!.isEmpty) return placeholder;
+    final config = context.read<ApiClient>().config;
     return Image.network(
-      url!,
+      config.toAbsoluteUrl(url),
       height: height,
       width: width,
       fit: BoxFit.cover,
@@ -53,7 +57,7 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Cover(url: post.coverImageUrl),
+            _Cover(url: post.coverImageUrl, width: double.infinity),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(

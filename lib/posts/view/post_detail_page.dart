@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:deca_mobile/core/network/api_client.dart';
+import 'package:deca_mobile/core/network/url_helper.dart';
 import 'package:deca_mobile/core/state/data_state.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/core/util/time_ago.dart';
@@ -68,12 +70,13 @@ class _Content extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final config = context.read<ApiClient>().config;
     return ListView(
       padding: EdgeInsets.zero,
       children: [
         if (post.coverImageUrl != null && post.coverImageUrl!.isNotEmpty)
           Image.network(
-            post.coverImageUrl!,
+            config.toAbsoluteUrl(post.coverImageUrl),
             width: double.infinity,
             height: 200,
             fit: BoxFit.cover,
@@ -105,6 +108,12 @@ class _Content extends StatelessWidget {
               MarkdownBody(
                 data: post.contentMd,
                 selectable: true,
+                sizedImageBuilder: (imgConfig) => Image.network(
+                  config.toAbsoluteUrl(imgConfig.uri.toString()),
+                  width: imgConfig.width,
+                  height: imgConfig.height,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
               ),
             ],
           ),
