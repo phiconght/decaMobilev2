@@ -1,105 +1,203 @@
 import 'dart:async';
 
-import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
+import 'package:deca_mobile/core/network/api_exception.dart';
 import 'package:deca_mobile/core/state/data_state.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
-import 'package:deca_mobile/core/widgets/section_card.dart';
-import 'package:deca_mobile/core/widgets/status_chip.dart';
-import 'package:deca_mobile/courses/cubit/course_sessions_cubit.dart';
-import 'package:deca_mobile/courses/data/models/course.dart';
-import 'package:deca_mobile/core/network/api_exception.dart';
 import 'package:deca_mobile/core/widgets/app_snackbar.dart';
+import 'package:deca_mobile/core/widgets/status_chip.dart';
+import 'package:deca_mobile/courses/cubit/course_outline_cubit.dart';
+import 'package:deca_mobile/courses/data/courses_repository.dart';
+import 'package:deca_mobile/courses/data/models/class_outline.dart';
+import 'package:deca_mobile/courses/data/models/course.dart';
+import 'package:deca_mobile/courses/widgets/course_progress_bar.dart';
 import 'package:deca_mobile/courses/widgets/course_session_tile.dart';
-import 'package:deca_mobile/exams/cubit/exams_cubit.dart';
+import 'package:deca_mobile/courses/widgets/topic_group_tile.dart';
 import 'package:deca_mobile/exams/data/exam_pdf_saver.dart';
 import 'package:deca_mobile/exams/data/exams_repository.dart';
-import 'package:deca_mobile/exams/data/models/exam.dart';
 import 'package:deca_mobile/exams/view/exam_paper_page.dart';
 import 'package:deca_mobile/exams/widgets/exam_list_tile.dart';
-import 'package:deca_mobile/schedule/data/models/timetable_item.dart';
-import 'package:deca_mobile/schedule/data/timetable_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-/// Chi tiet khoa hoc — nhan [Course] tu danh sach (khong fetch lai).
+/// Chi tiet khoa hoc — MOT danh sach duy nhat, gom theo CHUYEN DE.
 ///
-/// Hien thi theo thu tu: thong tin lop -> cac BUOI HOC DA QUA -> cac DE THI
-/// da/dang phat.
+/// Truoc day man nay chia 2 bang roi rac ("Buoi hoc da qua" / "De thi da phat")
+/// vi du lieu den tu 2 API khong lien quan nhau. Nay dung 1 endpoint
+/// `/classes/{id}/outline` tra san cay chuyen de -> buoi hoc + de thi.
+/// Xem SPEC_KhoaHoc_NoiDung_Mobile.md.
 class CourseDetailPage extends StatelessWidget {
   const CourseDetailPage({required this.course, super.key});
 
   final Course course;
 
-  /// View timetable de suy buoi da qua theo vai tro nguoi dung.
-  static String _viewFor(List<String> roles) {
-    if (roles.contains('STUDENT')) return 'STUDENT';
-    if (roles.contains('TEACHER')) return 'TEACHER';
-    return 'STUDENT';
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (ctx) {
+        final cubit = CourseOutlineCubit(
+          ctx.read<CoursesRepository>(),
+          course.id,
+        );
+        unawaited(cubit.load());
+        return cubit;
+      },
+      child: _CourseDetailView(course: course),
+    );
   }
+}
+
+class _CourseDetailView extends StatelessWidget {
+  const _CourseDetailView({required this.course});
+
+  final Course course;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final roles = context.read<AuthCubit>().state.user?.roles ?? const [];
-    final view = _viewFor(roles);
+    return Scaffold(
+      appBar: AppBar(title: Text(course.name)),
+      body: BlocBuilder<CourseOutlineCubit, DataState<ClassOutline>>(
+        builder: (context, state) {
+          final outline = state.data;
 
-    final f = DateFormat('dd/MM/yyyy');
-    final time = (course.startDate != null && course.endDate != null)
-        ? '${f.format(course.startDate!)} – ${f.format(course.endDate!)}'
-        : 'Chưa cập nhật';
-
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (ctx) {
-            final cubit = CourseSessionsCubit(
-              ctx.read<TimetableRepository>(),
-              course.id,
-              view,
-              since: course.startDate,
+          if (state.isLoading && outline == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.isFailure && outline == null) {
+            return _ErrorView(
+              message: state.error ?? 'Đã có lỗi xảy ra',
+              onRetry: () =>
+                  unawaited(context.read<CourseOutlineCubit>().refresh()),
             );
-            unawaited(cubit.load());
-            return cubit;
-          },
-        ),
-        BlocProvider(
-          create: (ctx) {
-            final cubit = ExamsCubit(ctx.read<ExamsRepository>(), course.id);
-            unawaited(cubit.load());
-            return cubit;
-          },
-        ),
-      ],
-      child: Scaffold(
-        appBar: AppBar(title: Text(course.name)),
-        body: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          children: [
-            _header(theme, time),
-            const SizedBox(height: AppSpacing.lg),
-            SectionCard(
-              title: 'Buổi học đã qua',
-              child: BlocBuilder<CourseSessionsCubit,
-                  DataState<List<TimetableItem>>>(
-                builder: _buildSessions,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            SectionCard(
-              title: 'Đề thi đã/đang phát',
-              child: BlocBuilder<ExamsCubit, DataState<List<Exam>>>(
-                builder: _buildExams,
-              ),
-            ),
-          ],
-        ),
+          }
+          if (outline == null) {
+            return const SizedBox.shrink();
+          }
+
+          return RefreshIndicator(
+            onRefresh: () => context.read<CourseOutlineCubit>().refresh(),
+            child: _OutlineList(course: course, outline: outline),
+          );
+        },
       ),
     );
   }
+}
 
-  Widget _header(ThemeData theme, String time) {
+class _OutlineList extends StatefulWidget {
+  const _OutlineList({required this.course, required this.outline});
+
+  final Course course;
+  final ClassOutline outline;
+
+  @override
+  State<_OutlineList> createState() => _OutlineListState();
+}
+
+class _OutlineListState extends State<_OutlineList> {
+  @override
+  Widget build(BuildContext context) {
+    final outline = widget.outline;
+    final groups = outline.groups.where((g) => !g.isEmpty).toList();
+
+    final now = DateTime.now();
+    final next = outline.nextSession(now) ?? outline.lastSession;
+    // Chi buoi PLANNED moi duoc danh dau "ke tiep"; neu khoa da ket thuc thi
+    // `next` la buoi cuoi, khong danh dau (khong con gi "ke tiep").
+    final nextId = outline.nextSession(now)?.sessionId;
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Nhom mo san = nhom chua buoi ke tiep; khoa da ket thuc -> nhom buoi cuoi.
+    final anchorGroupId = _groupIdOf(groups, next?.sessionId);
+
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        _header(context, outline),
+        const SizedBox(height: AppSpacing.lg),
+        CourseProgressBar(progress: outline.progress),
+        const SizedBox(height: AppSpacing.lg),
+        if (groups.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+            child: Text('Khóa học chưa có buổi học nào.'),
+          )
+        else
+          ...groups.map((g) {
+            final key = g.topicId ?? -1;
+            return Card(
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              clipBehavior: Clip.antiAlias,
+              child: TopicGroupTile(
+                group: g,
+                initiallyExpanded: key == anchorGroupId,
+                sessionBuilder: (s) => CourseSessionTile(
+                  session: s,
+                  isNext: s.sessionId == nextId,
+                  isToday: s.sessionId == nextId &&
+                      DateTime(s.date.year, s.date.month, s.date.day) == today,
+                ),
+                examBuilder: (e) => _examTile(context, e),
+              ),
+            );
+          }),
+      ],
+    );
+  }
+
+  /// Id nhom (topicId, -1 cho nhom chua phan) chua buoi [sessionId].
+  int? _groupIdOf(List<OutlineTopicGroup> groups, int? sessionId) {
+    if (sessionId == null) return null;
+    for (final g in groups) {
+      if (g.sessions.any((s) => s.sessionId == sessionId)) {
+        return g.topicId ?? -1;
+      }
+    }
+    return null;
+  }
+
+  Widget _examTile(BuildContext context, OutlineExam e) {
+    final exam = e.toExam();
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ExamListTile(
+          exam: exam,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => ExamPaperPage(exam: exam)),
+          ),
+          onDownloadPdf: () =>
+              unawaited(_downloadPdf(context, exam.id, exam.code)),
+        ),
+        if (e.isSubmitted && e.score != null)
+          Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.lg,
+              bottom: AppSpacing.sm,
+            ),
+            child: Text(
+              'Đã nộp · ${_formatScore(e.score!)} điểm',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _header(BuildContext context, ClassOutline outline) {
+    final theme = Theme.of(context);
     final onContainer = theme.colorScheme.onPrimaryContainer;
+    final f = DateFormat('dd/MM/yyyy');
+    final start = outline.startDate ?? widget.course.startDate;
+    final end = outline.endDate ?? widget.course.endDate;
+    final time = (start != null && end != null)
+        ? '${f.format(start)} – ${f.format(end)}'
+        : 'Chưa cập nhật';
+
     return Card(
       margin: EdgeInsets.zero,
       color: theme.colorScheme.primaryContainer,
@@ -112,21 +210,22 @@ class CourseDetailPage extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    course.name,
+                    outline.name.isEmpty ? widget.course.name : outline.name,
                     style: theme.textTheme.titleLarge
                         ?.copyWith(color: onContainer),
                   ),
                 ),
-                StatusChip(course.status),
+                StatusChip(outline.status ?? widget.course.status),
               ],
             ),
             const SizedBox(height: 6),
             Text(
-              '${course.subjectName} — ${course.gradeLevel}',
+              '${outline.subjectName ?? widget.course.subjectName} — '
+              '${outline.gradeLevel ?? widget.course.gradeLevel}',
               style: theme.textTheme.bodyMedium?.copyWith(color: onContainer),
             ),
             Text(
-              'Mã: ${course.code}',
+              'Mã: ${outline.code ?? widget.course.code}',
               style: theme.textTheme.bodySmall?.copyWith(color: onContainer),
             ),
             Text(
@@ -139,76 +238,19 @@ class CourseDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSessions(
-    BuildContext context,
-    DataState<List<TimetableItem>> state,
-  ) {
-    final sessions = state.data ?? const <TimetableItem>[];
-
-    if (state.isLoading && sessions.isEmpty) {
-      return const _SectionLoading();
-    }
-    if (state.isFailure && sessions.isEmpty) {
-      return _SectionError(
-        message: state.error ?? 'Đã có lỗi xảy ra',
-        onRetry: () => unawaited(context.read<CourseSessionsCubit>().refresh()),
-      );
-    }
-    if (sessions.isEmpty) {
-      return const _SectionEmpty(message: 'Chưa có buổi học nào đã qua.');
-    }
-
-    return Column(
-      children: [
-        for (var i = 0; i < sessions.length; i++) ...[
-          if (i > 0) const Divider(height: 1),
-          CourseSessionTile(item: sessions[i]),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildExams(BuildContext context, DataState<List<Exam>> state) {
-    final all = state.data ?? const <Exam>[];
-
-    if (state.isLoading && all.isEmpty) {
-      return const _SectionLoading();
-    }
-    if (state.isFailure && all.isEmpty) {
-      return _SectionError(
-        message: state.error ?? 'Đã có lỗi xảy ra',
-        onRetry: () => unawaited(context.read<ExamsCubit>().refresh()),
-      );
-    }
-
-    final published = _publishedExams(all);
-    if (published.isEmpty) {
-      return const _SectionEmpty(message: 'Chưa có đề thi nào được phát.');
-    }
-
-    return Column(
-      children: [
-        for (var i = 0; i < published.length; i++) ...[
-          if (i > 0) const Divider(height: 1),
-          ExamListTile(
-            exam: published[i],
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => ExamPaperPage(exam: published[i]),
-              ),
-            ),
-            onDownloadPdf: () => unawaited(_downloadPdf(context, published[i])),
-          ),
-        ],
-      ],
-    );
-  }
+  /// 8.0 -> "8"; 8.5 -> "8.5".
+  static String _formatScore(double v) =>
+      v % 1 == 0 ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
 
   /// Tai de thi PDF (bien the DE) va luu/mo theo nen tang.
-  static Future<void> _downloadPdf(BuildContext context, Exam exam) async {
+  Future<void> _downloadPdf(
+    BuildContext context,
+    int examId,
+    String code,
+  ) async {
     try {
-      final bytes = await context.read<ExamsRepository>().examPdf(exam.id);
-      await savePdf(bytes, 'De-thi_${exam.code}.pdf');
+      final bytes = await context.read<ExamsRepository>().examPdf(examId);
+      await savePdf(bytes, 'De-thi_$code.pdf');
       if (context.mounted) {
         AppSnackBar.success(context, 'Đã tải đề thi PDF');
       }
@@ -218,48 +260,10 @@ class CourseDetailPage extends StatelessWidget {
       if (context.mounted) AppSnackBar.error(context, 'Tải file thất bại');
     }
   }
-
-  /// De thi DA/DANG PHAT = da co moc phat (publishAt) va moc do <= hien tai.
-  /// Sap xep moi phat gan day len truoc.
-  static List<Exam> _publishedExams(List<Exam> exams) {
-    final now = DateTime.now();
-    return exams
-        .where((e) => e.publishAt != null && !e.publishAt!.isAfter(now))
-        .toList()
-      ..sort((a, b) => b.publishAt!.compareTo(a.publishAt!));
-  }
 }
 
-class _SectionLoading extends StatelessWidget {
-  const _SectionLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-      child: Center(child: CircularProgressIndicator()),
-    );
-  }
-}
-
-class _SectionEmpty extends StatelessWidget {
-  const _SectionEmpty({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Text(
-      message,
-      style: theme.textTheme.bodyMedium
-          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-    );
-  }
-}
-
-class _SectionError extends StatelessWidget {
-  const _SectionError({required this.message, required this.onRetry});
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -267,23 +271,27 @@ class _SectionError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          message,
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Thử lại'),
+            ),
+          ],
         ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Thử lại'),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
