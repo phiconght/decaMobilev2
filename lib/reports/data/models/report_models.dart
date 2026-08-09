@@ -156,6 +156,9 @@ class ExamReportDetail {
     required this.topicName,
     required this.breakdown,
     required this.distribution,
+    this.sessionId,
+    this.sessionTitle,
+    this.sessionDate,
   });
 
   factory ExamReportDetail.fromJson(Map<String, dynamic> j) => ExamReportDetail(
@@ -168,6 +171,9 @@ class ExamReportDetail {
         classSize: (j['classSize'] as num?)?.toInt(),
         topicId: (j['topicId'] as num?)?.toInt(),
         topicName: j['topicName'] as String?,
+        sessionId: (j['sessionId'] as num?)?.toInt(),
+        sessionTitle: j['sessionTitle'] as String?,
+        sessionDate: DateTime.tryParse(j['sessionDate'] as String? ?? ''),
         breakdown:
             Breakdown.fromJson(j['breakdown'] as Map<String, dynamic>? ?? {}),
         distribution: j['distribution'] == null
@@ -185,6 +191,9 @@ class ExamReportDetail {
   final int? classSize;
   final int? topicId;
   final String? topicName;
+  final int? sessionId;
+  final String? sessionTitle;
+  final DateTime? sessionDate;
   final Breakdown breakdown;
   final ScoreDistribution? distribution;
 }
@@ -461,4 +470,168 @@ class ChildOption {
   final int studentId;
   final String fullName;
   final String username;
+}
+
+class ChapterAnalysis {
+  const ChapterAnalysis({
+    required this.chapterLabel,
+    this.topicId,
+    this.avgScore,
+    this.rank,
+    this.classSize,
+  });
+
+  factory ChapterAnalysis.fromJson(Map<String, dynamic> j) => ChapterAnalysis(
+        topicId: (j['topicId'] as num?)?.toInt(),
+        chapterLabel: j['chapterLabel'] as String? ?? '',
+        avgScore: _d(j['avgScore']),
+        rank: (j['rank'] as num?)?.toInt(),
+        classSize: (j['classSize'] as num?)?.toInt(),
+      );
+
+  final int? topicId;
+  final String chapterLabel;
+  final double? avgScore;
+  final int? rank;
+  final int? classSize;
+}
+
+/// Bang "Phan tich tu dong" o dau bao cao ca nhan — cau chu da ghep san o BE
+/// (ReportNarrativeBuilder), Mobile chi render, khong tu tinh toan.
+class ReportAnalysis {
+  const ReportAnalysis({
+    required this.studentName,
+    required this.className,
+    required this.chapters,
+    required this.abilityInsights,
+    this.scoreSpectrumLabel,
+    this.courseAverage,
+    this.courseRank,
+    this.classSize,
+    this.attendanceInsight,
+    this.teacherCommentAuthor,
+    this.teacherCommentContent,
+  });
+
+  factory ReportAnalysis.fromJson(Map<String, dynamic> j) => ReportAnalysis(
+        studentName: j['studentName'] as String? ?? '',
+        className: j['className'] as String? ?? '',
+        scoreSpectrumLabel: j['scoreSpectrumLabel'] as String?,
+        courseAverage: _d(j['courseAverage']),
+        courseRank: (j['courseRank'] as num?)?.toInt(),
+        classSize: (j['classSize'] as num?)?.toInt(),
+        chapters: ((j['chapters'] as List<dynamic>?) ?? const [])
+            .map((e) => ChapterAnalysis.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        abilityInsights: ((j['abilityInsights'] as List<dynamic>?) ?? const [])
+            .map((e) => e as String)
+            .toList(),
+        attendanceInsight: j['attendanceInsight'] as String?,
+        teacherCommentAuthor: j['teacherCommentAuthor'] as String?,
+        teacherCommentContent: j['teacherCommentContent'] as String?,
+      );
+
+  final String studentName;
+  final String className;
+  final String? scoreSpectrumLabel;
+  final double? courseAverage;
+  final int? courseRank;
+  final int? classSize;
+  final List<ChapterAnalysis> chapters;
+  final List<String> abilityInsights;
+  final String? attendanceInsight;
+  final String? teacherCommentAuthor;
+  final String? teacherCommentContent;
+}
+
+/// Bang "Phan tich tu dong" cho 1 CHUONG (§Phan C) — doc lap voi
+/// [ChapterAnalysis] (item long trong [ReportAnalysis] cap toan khoa).
+class ChapterAnalysisDetail {
+  const ChapterAnalysisDetail({
+    required this.abilityInsights,
+    this.chapterLabel,
+    this.avgScore,
+    this.rank,
+    this.classSize,
+    this.attendanceInsight,
+  });
+
+  factory ChapterAnalysisDetail.fromJson(Map<String, dynamic> j) =>
+      ChapterAnalysisDetail(
+        chapterLabel: j['chapterLabel'] as String?,
+        avgScore: _d(j['avgScore']),
+        rank: (j['rank'] as num?)?.toInt(),
+        classSize: (j['classSize'] as num?)?.toInt(),
+        abilityInsights: ((j['abilityInsights'] as List<dynamic>?) ?? const [])
+            .map((e) => e as String)
+            .toList(),
+        attendanceInsight: j['attendanceInsight'] as String?,
+      );
+
+  final String? chapterLabel;
+  final double? avgScore;
+  final int? rank;
+  final int? classSize;
+  final List<String> abilityInsights;
+  final String? attendanceInsight;
+}
+
+/// Bang "Phan tich tu dong" cho 1 BUOI HOC (§Phan C).
+class SessionAnalysis {
+  const SessionAnalysis({
+    required this.abilityInsights,
+    required this.examCount,
+    required this.submittedCount,
+    this.avgScore,
+    this.classAverage,
+    this.comparisonInsight,
+  });
+
+  factory SessionAnalysis.fromJson(Map<String, dynamic> j) => SessionAnalysis(
+        avgScore: _d(j['avgScore']),
+        classAverage: _d(j['classAverage']),
+        comparisonInsight: j['comparisonInsight'] as String?,
+        abilityInsights: ((j['abilityInsights'] as List<dynamic>?) ?? const [])
+            .map((e) => e as String)
+            .toList(),
+        examCount: _i(j['examCount']),
+        submittedCount: _i(j['submittedCount']),
+      );
+
+  final double? avgScore;
+  final double? classAverage;
+  final String? comparisonInsight;
+  final List<String> abilityInsights;
+  final int examCount;
+  final int submittedCount;
+}
+
+/// Bang "Phan tich tu dong" cho 1 BAI THI (§Phan C).
+class ExamAnalysis {
+  const ExamAnalysis({
+    required this.abilityInsights,
+    this.score,
+    this.classAverage,
+    this.rank,
+    this.classSize,
+    this.comparisonInsight,
+  });
+
+  factory ExamAnalysis.fromJson(Map<String, dynamic> j) => ExamAnalysis(
+        score: _d(j['score']),
+        classAverage: _d(j['classAverage']),
+        rank: (j['rank'] as num?)?.toInt(),
+        classSize: (j['classSize'] as num?)?.toInt(),
+        comparisonInsight: j['comparisonInsight'] as String?,
+        abilityInsights: ((j['abilityInsights'] as List<dynamic>?) ?? const [])
+            .map((e) => e as String)
+            .toList(),
+      );
+
+  final double? score;
+  final double? classAverage;
+  final int? rank;
+  final int? classSize;
+  final String? comparisonInsight;
+  final List<String> abilityInsights;
 }

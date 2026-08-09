@@ -1,9 +1,12 @@
 import 'package:deca_mobile/core/widgets/section_card.dart';
+import 'package:deca_mobile/courses/data/courses_repository.dart';
 import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
+import 'package:deca_mobile/reports/view/chapter_report_page.dart';
 import 'package:deca_mobile/reports/view/student_report_view.dart';
 import 'package:deca_mobile/reports/widgets/report_charts.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class _ClassBundle {
   const _ClassBundle(
@@ -77,6 +80,21 @@ class _ClassReportPageState extends State<ClassReportPage> {
       r[3] as StudentAttendanceReport,
       r[4] as List<ClassStudentAverage>,
       r[5] as ScoreDistribution,
+    );
+  }
+
+  void _openChapter(TopicMastery t) {
+    if (t.topicId == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChapterReportPage(
+          repository: widget.repository,
+          coursesRepository: context.read<CoursesRepository>(),
+          classId: widget.clazz.classId,
+          topicId: t.topicId!,
+          topicName: t.topicName,
+        ),
+      ),
     );
   }
 
@@ -160,7 +178,21 @@ class _ClassReportPageState extends State<ClassReportPage> {
               const SizedBox(height: 16),
               SectionCard(
                 title: 'Nắm chắc kiến thức theo chương (cả lớp)',
-                child: TopicMasteryChart(items: b.mastery),
+                child: Column(
+                  children: [
+                    TopicMasteryChart(items: b.mastery),
+                    const SizedBox(height: 8),
+                    ...b.mastery.where((t) => t.topicId != null).map(
+                          (t) => ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(t.topicName),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _openChapter(t),
+                          ),
+                        ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               SectionCard(

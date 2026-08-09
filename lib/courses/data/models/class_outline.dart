@@ -243,6 +243,7 @@ class OutlineExam extends Equatable {
     this.durationMinutes,
     this.studentStatus,
     this.score,
+    this.maxScore,
   });
 
   factory OutlineExam.fromJson(Map<String, dynamic> json) {
@@ -257,6 +258,7 @@ class OutlineExam extends Equatable {
       durationMinutes: (json['durationMinutes'] as num?)?.toInt(),
       studentStatus: json['studentStatus'] as String?,
       score: (json['score'] as num?)?.toDouble(),
+      maxScore: (json['maxScore'] as num?)?.toDouble(),
     );
   }
 
@@ -270,6 +272,7 @@ class OutlineExam extends Equatable {
   final int? durationMinutes;
   final String? studentStatus;
   final double? score;
+  final double? maxScore;
 
   bool get isSubmitted => studentStatus == 'DA_LAM';
 

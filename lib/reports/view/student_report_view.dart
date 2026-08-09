@@ -1,21 +1,26 @@
 import 'package:deca_mobile/core/widgets/section_card.dart';
+import 'package:deca_mobile/courses/data/courses_repository.dart';
 import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
+import 'package:deca_mobile/reports/view/chapter_report_page.dart';
 import 'package:deca_mobile/reports/view/student_exam_detail_page.dart';
+import 'package:deca_mobile/reports/widgets/analysis_card.dart';
+import 'package:deca_mobile/reports/widgets/chapter_cards.dart';
 import 'package:deca_mobile/reports/widgets/comments_section.dart';
 import 'package:deca_mobile/reports/widgets/report_charts.dart';
 import 'package:deca_mobile/reports/widgets/score_color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 class _Bundle {
-  const _Bundle(
-      this.trend, this.breakdown, this.mastery, this.attendance, this.spectrum);
+  const _Bundle(this.trend, this.breakdown, this.mastery, this.attendance,
+      this.analysis);
   final List<ScoreTrendPoint> trend;
   final Breakdown breakdown;
   final List<TopicMastery> mastery;
   final StudentAttendanceReport attendance;
-  final ScoreDistribution spectrum;
+  final ReportAnalysis? analysis;
 }
 
 /// Thân báo cáo của 1 học viên (HS xem mình / PH xem con).
@@ -86,7 +91,7 @@ class _StudentReportViewState extends State<StudentReportView> {
       widget.repository.breakdowns(widget.studentId, classId),
       widget.repository.topicMastery(widget.studentId, classId),
       widget.repository.attendance(widget.studentId, classId),
-      widget.repository.courseSpectrum(widget.studentId, classId),
+      widget.repository.analysis(widget.studentId, classId),
     ]);
     final mastery = results[2] as List<TopicMastery>;
     _mastery = mastery;
@@ -95,7 +100,7 @@ class _StudentReportViewState extends State<StudentReportView> {
       results[1] as Breakdown,
       mastery,
       results[3] as StudentAttendanceReport,
-      results[4] as ScoreDistribution,
+      results[4] as ReportAnalysis,
     );
   }
 
@@ -111,6 +116,23 @@ class _StudentReportViewState extends State<StudentReportView> {
           exam: e,
           topics: _mastery,
           canAssign: widget.canComment,
+        ),
+      ),
+    );
+  }
+
+  void _openChapter(TopicMastery t) {
+    final classId = _classId;
+    if (classId == null || t.topicId == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChapterReportPage(
+          repository: widget.repository,
+          coursesRepository: context.read<CoursesRepository>(),
+          classId: classId,
+          topicId: t.topicId!,
+          topicName: t.topicName,
+          studentId: widget.studentId,
         ),
       ),
     );
@@ -174,11 +196,19 @@ class _StudentReportViewState extends State<StudentReportView> {
                   final att = b.attendance.summary;
                   return Column(
                     children: [
-                      SectionCard(
-                        title: 'Phổ điểm toàn khóa',
-                        child: CourseScoreSpectrum(data: b.spectrum),
+                      Text('Báo cáo theo chương học',
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      ChapterCards(
+                        topics: b.mastery,
+                        onTap: (topicId) {
+                          final t = b.mastery
+                              .firstWhere((m) => m.topicId == topicId);
+                          _openChapter(t);
+                        },
                       ),
                       const SizedBox(height: 16),
+                      AnalysisCard(analysis: b.analysis),
                       SectionCard(
                         title: 'Xu hướng điểm trong khóa',
                         child: ScoreTrendChart(points: b.trend),

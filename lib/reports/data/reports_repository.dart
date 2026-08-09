@@ -7,12 +7,30 @@ abstract class ReportsRepository {
   Future<List<RecentExam>> examHistory(int studentId, int classId);
   Future<List<StudentClassOption>> studentClasses(int studentId);
   Future<ExamReportDetail> examDetail(int studentId, int examId, int classId);
-  Future<List<ScoreTrendPoint>> scoreTrend(int studentId, int classId);
+  Future<List<ScoreTrendPoint>> scoreTrend(int studentId, int classId,
+      {int? topicId});
   Future<Breakdown> breakdowns(int studentId, int classId, {int? topicId});
   Future<List<TopicMastery>> topicMastery(int studentId, int classId);
-  Future<StudentAttendanceReport> attendance(int studentId, int classId);
+  Future<StudentAttendanceReport> attendance(int studentId, int classId,
+      {int? topicId});
   Future<List<ChildOption>> myChildren();
   Future<List<StudentClassOption>> myClasses();
+  // Bang "Phan tich tu dong" — cap toan khoa
+  Future<ReportAnalysis> analysis(int studentId, int classId);
+  // Bang "Phan tich tu dong" — cap Chuong/Buoi/Bai thi (§Phan C)
+  Future<ChapterAnalysisDetail> chapterAnalysis(
+      int studentId, int classId, int topicId);
+  Future<SessionAnalysis> sessionAnalysis(
+      int studentId, int classId, int sessionId);
+  Future<ExamAnalysis> examAnalysis(int studentId, int examId, int classId);
+  // Bao cao cap BUOI HOC (drill-down cap 3)
+  Future<List<RecentExam>> sessionExams(
+      int studentId, int classId, int sessionId);
+  Future<Breakdown> sessionBreakdowns(
+      int studentId, int classId, int sessionId);
+  Future<List<ClassExamAverage>> classSessionExams(
+      int classId, int sessionId);
+  Future<Breakdown> classSessionBreakdowns(int classId, int sessionId);
   // Pho diem (§12)
   Future<ScoreDistribution> examScoreDistribution(
       int studentId, int examId, int classId);
@@ -24,10 +42,12 @@ abstract class ReportsRepository {
   Future<PracticeAssignmentResult> assignPractice(
       int studentId, int classId, {required int examId, int? topicId});
   // Lop
-  Future<List<ClassExamAverage>> classExamAverages(int classId);
+  Future<List<ClassExamAverage>> classExamAverages(int classId,
+      {int? topicId});
   Future<Breakdown> classBreakdowns(int classId, {int? topicId});
   Future<List<TopicMastery>> classTopicMastery(int classId);
-  Future<StudentAttendanceReport> classAttendance(int classId);
+  Future<StudentAttendanceReport> classAttendance(int classId,
+      {int? topicId});
   Future<List<ClassStudentAverage>> classStudents(int classId);
   // Nhan xet
   Future<List<ReportComment>> comments(int studentId, int classId);
@@ -92,9 +112,12 @@ class ReportsRepositoryImpl implements ReportsRepository {
   }
 
   @override
-  Future<List<ScoreTrendPoint>> scoreTrend(int studentId, int classId) async {
-    final data =
-        await _api.get('$_base/students/$studentId/classes/$classId/score-trend');
+  Future<List<ScoreTrendPoint>> scoreTrend(int studentId, int classId,
+      {int? topicId}) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/classes/$classId/score-trend',
+      query: topicId == null ? null : {'topicId': topicId},
+    );
     return _list(data, ScoreTrendPoint.fromJson);
   }
 
@@ -172,10 +195,81 @@ class ReportsRepositoryImpl implements ReportsRepository {
   }
 
   @override
-  Future<StudentAttendanceReport> attendance(int studentId, int classId) async {
-    final data =
-        await _api.get('$_base/students/$studentId/classes/$classId/attendance');
+  Future<StudentAttendanceReport> attendance(int studentId, int classId,
+      {int? topicId}) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/classes/$classId/attendance',
+      query: topicId == null ? null : {'topicId': topicId},
+    );
     return StudentAttendanceReport.fromJson(_map(data));
+  }
+
+  @override
+  Future<List<RecentExam>> sessionExams(
+      int studentId, int classId, int sessionId) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/classes/$classId/sessions/$sessionId/exams',
+    );
+    return _list(data, RecentExam.fromJson);
+  }
+
+  @override
+  Future<Breakdown> sessionBreakdowns(
+      int studentId, int classId, int sessionId) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/classes/$classId/sessions/$sessionId/breakdowns',
+    );
+    return Breakdown.fromJson(_map(data));
+  }
+
+  @override
+  Future<List<ClassExamAverage>> classSessionExams(
+      int classId, int sessionId) async {
+    final data =
+        await _api.get('$_base/classes/$classId/sessions/$sessionId/exams');
+    return _list(data, ClassExamAverage.fromJson);
+  }
+
+  @override
+  Future<Breakdown> classSessionBreakdowns(int classId, int sessionId) async {
+    final data = await _api
+        .get('$_base/classes/$classId/sessions/$sessionId/breakdowns');
+    return Breakdown.fromJson(_map(data));
+  }
+
+  @override
+  Future<ReportAnalysis> analysis(int studentId, int classId) async {
+    final data =
+        await _api.get('$_base/students/$studentId/classes/$classId/analysis');
+    return ReportAnalysis.fromJson(_map(data));
+  }
+
+  @override
+  Future<ChapterAnalysisDetail> chapterAnalysis(
+      int studentId, int classId, int topicId) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/classes/$classId/topics/$topicId/analysis',
+    );
+    return ChapterAnalysisDetail.fromJson(_map(data));
+  }
+
+  @override
+  Future<SessionAnalysis> sessionAnalysis(
+      int studentId, int classId, int sessionId) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/classes/$classId/sessions/$sessionId/analysis',
+    );
+    return SessionAnalysis.fromJson(_map(data));
+  }
+
+  @override
+  Future<ExamAnalysis> examAnalysis(
+      int studentId, int examId, int classId) async {
+    final data = await _api.get(
+      '$_base/students/$studentId/exams/$examId/analysis',
+      query: {'classId': classId},
+    );
+    return ExamAnalysis.fromJson(_map(data));
   }
 
   @override
@@ -191,8 +285,12 @@ class ReportsRepositoryImpl implements ReportsRepository {
   }
 
   @override
-  Future<List<ClassExamAverage>> classExamAverages(int classId) async {
-    final data = await _api.get('$_base/classes/$classId/exam-averages');
+  Future<List<ClassExamAverage>> classExamAverages(int classId,
+      {int? topicId}) async {
+    final data = await _api.get(
+      '$_base/classes/$classId/exam-averages',
+      query: topicId == null ? null : {'topicId': topicId},
+    );
     return _list(data, ClassExamAverage.fromJson);
   }
 
@@ -212,8 +310,12 @@ class ReportsRepositoryImpl implements ReportsRepository {
   }
 
   @override
-  Future<StudentAttendanceReport> classAttendance(int classId) async {
-    final data = await _api.get('$_base/classes/$classId/attendance');
+  Future<StudentAttendanceReport> classAttendance(int classId,
+      {int? topicId}) async {
+    final data = await _api.get(
+      '$_base/classes/$classId/attendance',
+      query: topicId == null ? null : {'topicId': topicId},
+    );
     return StudentAttendanceReport.fromJson(_map(data));
   }
 
