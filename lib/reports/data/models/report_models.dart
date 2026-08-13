@@ -303,6 +303,60 @@ class PracticeAssignmentResult {
   final DateTime? deadline;
 }
 
+/// 1 dòng trong danh sách "Bài phụ huynh giao" (tab Khóa học, §10.11) — khác
+/// [PracticeAssignmentResult] (chỉ dùng cho hộp thoại "vừa giao xong"): đây
+/// là model DUYỆT DANH SÁCH, cần đủ id để mở bài làm / xem lại kết quả.
+class PracticeAssignmentItem {
+  const PracticeAssignmentItem({
+    required this.assignmentId,
+    required this.examId,
+    required this.examCode,
+    required this.examName,
+    required this.classId,
+    required this.className,
+    required this.numQuestions,
+    required this.status,
+    this.topicId,
+    this.topicName,
+    this.durationMinutes,
+    this.deadline,
+  });
+
+  factory PracticeAssignmentItem.fromJson(Map<String, dynamic> j) {
+    return PracticeAssignmentItem(
+      assignmentId: _i(j['assignmentId']),
+      examId: _i(j['examId']),
+      examCode: j['examCode'] as String? ?? '',
+      examName: j['examName'] as String? ?? '',
+      classId: _i(j['classId']),
+      className: j['className'] as String? ?? '',
+      topicId: (j['topicId'] as num?)?.toInt(),
+      topicName: j['topicName'] as String?,
+      numQuestions: _i(j['numQuestions']),
+      durationMinutes: (j['durationMinutes'] as num?)?.toInt(),
+      deadline: _dt(j['deadline']),
+      status: j['status'] as String? ?? 'ASSIGNED',
+    );
+  }
+
+  final int assignmentId;
+  final int examId;
+  final String examCode;
+  final String examName;
+  final int classId;
+  final String className;
+  final int? topicId;
+  final String? topicName;
+  final int numQuestions;
+  final int? durationMinutes;
+  final DateTime? deadline;
+
+  /// ASSIGNED (chưa làm) | SUBMITTED (đã nộp).
+  final String status;
+
+  bool get isSubmitted => status == 'SUBMITTED';
+}
+
 class AttendanceSummary {
   const AttendanceSummary({
     required this.totalSessions,

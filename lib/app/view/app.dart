@@ -22,6 +22,7 @@ import 'package:deca_mobile/posts/data/posts_repository.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/schedule/data/attendance_repository.dart';
 import 'package:deca_mobile/schedule/data/leave_repository.dart';
+import 'package:deca_mobile/schedule/data/session_content_repository.dart';
 import 'package:deca_mobile/schedule/data/timetable_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -59,6 +60,9 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<AttendanceRepository>(
           create: (_) => AttendanceRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<SessionContentRepository>(
+          create: (_) => SessionContentRepositoryImpl(apiClient),
         ),
         RepositoryProvider<CatalogRepository>(
           create: (_) => CatalogRepositoryImpl(apiClient),

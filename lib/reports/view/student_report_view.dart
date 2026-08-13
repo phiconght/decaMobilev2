@@ -6,6 +6,7 @@ import 'package:deca_mobile/reports/view/chapter_report_page.dart';
 import 'package:deca_mobile/reports/view/student_exam_detail_page.dart';
 import 'package:deca_mobile/reports/widgets/analysis_card.dart';
 import 'package:deca_mobile/reports/widgets/chapter_cards.dart';
+import 'package:deca_mobile/reports/widgets/assign_practice_button.dart';
 import 'package:deca_mobile/reports/widgets/comments_section.dart';
 import 'package:deca_mobile/reports/widgets/report_charts.dart';
 import 'package:deca_mobile/reports/widgets/score_color.dart';
@@ -133,6 +134,7 @@ class _StudentReportViewState extends State<StudentReportView> {
           topicId: t.topicId!,
           topicName: t.topicName,
           studentId: widget.studentId,
+          canAssign: widget.canComment,
         ),
       ),
     );
@@ -172,6 +174,23 @@ class _StudentReportViewState extends State<StudentReportView> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // "Giao bài tập" cấp KHÓA — BE tự chọn chương HV đang yếu nhất
+            // trong khóa (§10, mở rộng 11/08/2026). Chỉ hiện cho người có
+            // quyền giao (PH/GV — tái dùng đúng cờ `canComment` như dropdown
+            // giao bài ở màn chi tiết bài thi).
+            if (widget.canComment && _classId != null) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: AssignPracticeButton(
+                  repository: widget.repository,
+                  studentId: widget.studentId,
+                  classId: _classId!,
+                  scopeLabel: 'toàn khóa',
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             Text('Tất cả bài thi (${_classExams.length})',
                 style: Theme.of(context).textTheme.titleMedium),

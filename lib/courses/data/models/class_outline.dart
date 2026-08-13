@@ -185,9 +185,11 @@ class OutlineSession extends Equatable {
     this.attendanceStatus,
     this.onLeave = false,
     this.materialCount = 0,
+    this.exams = const [],
   });
 
   factory OutlineSession.fromJson(Map<String, dynamic> json) {
+    final rawExams = (json['exams'] as List<dynamic>?) ?? const [];
     return OutlineSession(
       sessionId: (json['sessionId'] as num?)?.toInt() ?? 0,
       ordinal: (json['ordinal'] as num?)?.toInt(),
@@ -202,6 +204,9 @@ class OutlineSession extends Equatable {
       attendanceStatus: json['attendanceStatus'] as String?,
       onLeave: json['onLeave'] as bool? ?? false,
       materialCount: (json['materialCount'] as num?)?.toInt() ?? 0,
+      exams: rawExams
+          .map((e) => OutlineExam.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -218,6 +223,10 @@ class OutlineSession extends Equatable {
   final String? attendanceStatus;
   final bool onLeave;
   final int materialCount;
+
+  /// De thi cua RIENG buoi nay (exam.sessionId = buoi nay) — hien ngay sau
+  /// buoi hoc thay vi don rieng cuoi nhom chuyen de.
+  final List<OutlineExam> exams;
 
   /// CHI buoi DONE moi duoc hien huy hieu diem danh.
   ///

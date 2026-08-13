@@ -26,9 +26,12 @@ class TopicGroupTile extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
 
+    // Tong so de thi = de gan RIENG tung buoi + de "roi" cap chuyen de.
+    final totalExamCount = group.exams.length +
+        group.sessions.fold<int>(0, (sum, s) => sum + s.exams.length);
     final counts = <String>[
       if (group.sessions.isNotEmpty) '${group.sessions.length} buổi',
-      if (group.exams.isNotEmpty) '${group.exams.length} đề thi',
+      if (totalExamCount > 0) '$totalExamCount đề thi',
     ].join(' · ');
 
     return ExpansionTile(
@@ -53,7 +56,11 @@ class TopicGroupTile extends StatelessWidget {
               style: theme.textTheme.bodySmall?.copyWith(color: muted),
             ),
       children: [
+        // De thi cua RIENG 1 buoi da duoc ve GON ngay trong the buoi do
+        // (ExamMiniRow, xem CourseSessionTile) — o day chi can render buoi.
         ...group.sessions.map(sessionBuilder),
+        // De thi KHONG gan buoi cu the (legacy, chi thuoc chuyen de) van don
+        // rieng cuoi nhom — khong the noi vao buoi nao.
         if (group.exams.isNotEmpty) ...[
           if (group.sessions.isNotEmpty) const Divider(height: 1),
           Padding(

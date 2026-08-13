@@ -1,5 +1,6 @@
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/courses/data/models/class_outline.dart';
+import 'package:deca_mobile/courses/widgets/exam_mini_row.dart';
 import 'package:deca_mobile/schedule/data/models/timetable_item.dart';
 import 'package:deca_mobile/schedule/widgets/attendance_badge.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,8 @@ class CourseSessionTile extends StatelessWidget {
     required this.session,
     this.isNext = false,
     this.isToday = false,
+    this.onTap,
+    this.onExamTap,
     super.key,
   });
 
@@ -25,6 +28,14 @@ class CourseSessionTile extends StatelessWidget {
   /// Buoi ke tiep va dien ra hom nay -> doi nhan thanh "Hom nay".
   /// Suy o client tu ngay, KHONG phai trang thai DB (khong co IN_PROGRESS).
   final bool isToday;
+
+  /// Mo chi tiet buoi (video bai giang, link Zoom...). Khong bat buoc.
+  final VoidCallback? onTap;
+
+  /// Mo bai lam cua 1 de thi gan RIENG buoi nay (session.exams). De thi
+  /// duoc ve GON trong chinh the buoi (ExamMiniRow), khong tach the rieng —
+  /// tranh moi buoi bi nhan doi thanh 2 card lien tiep (roi mat).
+  final ValueChanged<OutlineExam>? onExamTap;
 
   static const _weekdayLabels = ['', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
@@ -139,9 +150,24 @@ class CourseSessionTile extends StatelessWidget {
               ],
             ),
           ],
+          // De thi cua RIENG buoi nay — 1 dong gon, khong tach the rieng
+          // (tranh moi buoi bi nhan doi thanh 2 card lien tiep, roi mat).
+          if (session.exams.isNotEmpty) ...[
+            const Divider(height: AppSpacing.md),
+            ...session.exams.map(
+              (exam) => ExamMiniRow(
+                exam: exam,
+                onTap: onExamTap == null ? null : () => onExamTap!(exam),
+              ),
+            ),
+          ],
         ],
       ),
     );
+
+    // Buoi CHUA dien ra (PLANNED — "chua phat hanh") hoac DA HUY thi khong
+    // cho bam vao xem chi tiet — chi buoi DONE (da hoc) moi mo duoc.
+    final canOpen = session.status == OutlineSessionStatus.done;
 
     return Semantics(
       // Gop thanh 1 nhan de screen reader doc lien mach thay vi doc roi tung
@@ -158,7 +184,16 @@ class CourseSessionTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               )
             : null,
-        child: Opacity(opacity: dim ? 0.7 : 1, child: content),
+        child: Opacity(
+          opacity: dim ? 0.7 : 1,
+          child: (onTap == null || !canOpen)
+              ? content
+              : InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(8),
+                  child: content,
+                ),
+        ),
       ),
     );
   }

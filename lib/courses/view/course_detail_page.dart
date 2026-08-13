@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
 import 'package:deca_mobile/core/network/api_exception.dart';
 import 'package:deca_mobile/core/state/data_state.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
@@ -16,6 +17,9 @@ import 'package:deca_mobile/exams/data/exam_pdf_saver.dart';
 import 'package:deca_mobile/exams/data/exams_repository.dart';
 import 'package:deca_mobile/exams/view/exam_paper_page.dart';
 import 'package:deca_mobile/exams/widgets/exam_list_tile.dart';
+import 'package:deca_mobile/schedule/data/models/timetable_item.dart'
+    as timetable;
+import 'package:deca_mobile/schedule/view/session_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -136,12 +140,61 @@ class _OutlineListState extends State<_OutlineList> {
                   isNext: s.sessionId == nextId,
                   isToday: s.sessionId == nextId &&
                       DateTime(s.date.year, s.date.month, s.date.day) == today,
+                  onTap: () => _openSessionDetail(context, outline, s),
+                  onExamTap: (e) => _openExam(context, e),
                 ),
                 examBuilder: (e) => _examTile(context, e),
               ),
             );
           }),
       ],
+    );
+  }
+
+  /// Mo chi tiet buoi hoc (video bai giang, link Zoom...) — tai dung
+  /// SessionDetailPage cua Timetable, dung du lieu da co san trong outline
+  /// (khong goi them API). Xem SPEC_VideoBaiGiang_Zoom.md §5.1.
+  void _openSessionDetail(
+    BuildContext context,
+    ClassOutline outline,
+    OutlineSession s,
+  ) {
+    final user = context.read<AuthCubit>().state.user;
+    final roles = user?.roles ?? const <String>[];
+    final view = roles.contains('TEACHER') || roles.contains('ASSISTANT')
+        ? 'TEACHER'
+        : roles.contains('PARENT')
+            ? 'PARENT'
+            : 'STUDENT';
+
+    final status = switch (s.status) {
+      OutlineSessionStatus.done => timetable.SessionStatus.done,
+      OutlineSessionStatus.cancelled => timetable.SessionStatus.cancelled,
+      OutlineSessionStatus.planned => timetable.SessionStatus.planned,
+    };
+
+    final item = timetable.TimetableItem(
+      sessionId: s.sessionId,
+      classId: outline.classId,
+      className: outline.name.isEmpty ? widget.course.name : outline.name,
+      subjectName: outline.subjectName,
+      gradeLevel: outline.gradeLevel,
+      date: s.date,
+      startTime: s.startTime ?? '00:00',
+      endTime: s.endTime ?? '00:00',
+      roomName: s.roomName,
+      teacherName: s.teacherName,
+      status: status,
+      attendanceStatus: timetable.attendanceStatusFromString(
+        s.attendanceStatus,
+      ),
+      onLeave: s.onLeave,
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionDetailPage(item: item, view: view),
+      ),
     );
   }
 
@@ -156,6 +209,15 @@ class _OutlineListState extends State<_OutlineList> {
     return null;
   }
 
+  /// Mo bai lam cua 1 de thi (dung chung cho ExamMiniRow gan buoi va
+  /// ExamListTile day du o nhom "de roi").
+  void _openExam(BuildContext context, OutlineExam e) {
+    final exam = e.toExam();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => ExamPaperPage(exam: exam)),
+    );
+  }
+
   Widget _examTile(BuildContext context, OutlineExam e) {
     final exam = e.toExam();
     final theme = Theme.of(context);
@@ -164,9 +226,7 @@ class _OutlineListState extends State<_OutlineList> {
       children: [
         ExamListTile(
           exam: exam,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => ExamPaperPage(exam: exam)),
-          ),
+          onTap: () => _openExam(context, e),
           onDownloadPdf: () =>
               unawaited(_downloadPdf(context, exam.id, exam.code)),
         ),

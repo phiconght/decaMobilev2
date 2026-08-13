@@ -1,3 +1,4 @@
+import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
 import 'package:deca_mobile/core/state/data_state.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/core/widgets/async_list_view.dart';
@@ -5,6 +6,8 @@ import 'package:deca_mobile/courses/cubit/courses_cubit.dart';
 import 'package:deca_mobile/courses/data/models/course.dart';
 import 'package:deca_mobile/courses/view/course_detail_page.dart';
 import 'package:deca_mobile/courses/widgets/course_card.dart';
+import 'package:deca_mobile/reports/data/reports_repository.dart';
+import 'package:deca_mobile/reports/view/practice_assignments_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -73,6 +76,12 @@ class _CoursesPageState extends State<CoursesPage> {
             ),
           ),
         ),
+        // The "khóa" mặc định gom TOÀN BỘ bài luyện tập phụ huynh giao, gộp
+        // từ mọi khóa thật — trước đây phải mở đúng khóa rồi lục tìm trong
+        // danh sách đề thi mới thấy, rất khó tìm (phản hồi 11/08/2026).
+        // Chỉ hiện cho HV (PH/GV không có bài được giao cho chính họ), và
+        // ẩn khi đang tìm kiếm (không phải khóa thật nên không lọc theo tên).
+        if (!hasQuery) const _PracticeAssignmentsEntry(),
         Expanded(
           child: BlocBuilder<CoursesCubit, DataState<List<Course>>>(
             builder: (context, state) {
@@ -101,6 +110,48 @@ class _CoursesPageState extends State<CoursesPage> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Thẻ cố định "Bài phụ huynh giao" — chỉ hiện cho HV (người thực sự có bài
+/// được giao). PH/GV/Admin xem tab này với dữ liệu khác (hoặc rỗng) nên
+/// không có bài của "chính họ" để hiện.
+class _PracticeAssignmentsEntry extends StatelessWidget {
+  const _PracticeAssignmentsEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.select((AuthCubit c) => c.state.user);
+    final roles = user?.roles ?? const <String>[];
+    if (!roles.contains('STUDENT') || user == null) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Card(
+        margin: EdgeInsets.zero,
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        child: ListTile(
+          leading: const Icon(Icons.assignment_outlined),
+          title: const Text('Bài phụ huynh giao'),
+          subtitle: const Text('Bài luyện tập được giao riêng cho bạn'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => PracticeAssignmentsPage(
+                repository: context.read<ReportsRepository>(),
+                studentId: user.id,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

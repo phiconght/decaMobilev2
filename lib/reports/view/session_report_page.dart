@@ -4,6 +4,7 @@ import 'package:deca_mobile/courses/data/models/class_outline.dart';
 import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/reports/view/student_exam_detail_page.dart';
+import 'package:deca_mobile/reports/widgets/assign_practice_button.dart';
 import 'package:deca_mobile/reports/widgets/report_charts.dart';
 import 'package:deca_mobile/reports/widgets/session_analysis_card.dart';
 import 'package:flutter/material.dart';
@@ -30,6 +31,7 @@ class SessionReportPage extends StatefulWidget {
     required this.classId,
     required this.sessionId,
     this.studentId,
+    this.canAssign = false,
     super.key,
   });
 
@@ -38,6 +40,10 @@ class SessionReportPage extends StatefulWidget {
   final int classId;
   final int sessionId;
   final int? studentId;
+
+  /// Hiện nút "Giao bài tập" phạm vi chương của buổi này (§10, mở rộng
+  /// 11/08/2026). Chỉ có tác dụng khi [studentId] khác null.
+  final bool canAssign;
 
   @override
   State<SessionReportPage> createState() => _SessionReportPageState();
@@ -98,6 +104,15 @@ class _SessionReportPageState extends State<SessionReportPage> {
     return null;
   }
 
+  /// Nhom chuyen de chua buoi nay — de biet buoi thuoc chuong nao (giao bai
+  /// tap theo buoi thuc chat la giao theo chuong cua buoi do, xem §10).
+  OutlineTopicGroup? _findGroup(ClassOutline outline) {
+    for (final g in outline.groups) {
+      if (g.sessions.any((s) => s.sessionId == widget.sessionId)) return g;
+    }
+    return null;
+  }
+
   void _openExam(RecentExam e, List<TopicMastery> topics) {
     final studentId = widget.studentId;
     if (studentId == null) return;
@@ -129,10 +144,29 @@ class _SessionReportPageState extends State<SessionReportPage> {
           }
           final b = snap.data!;
           final session = _findSession(b.outline);
+          final group = _findGroup(b.outline);
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (widget.canAssign && widget.studentId != null) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: AssignPracticeButton(
+                    repository: widget.repository,
+                    studentId: widget.studentId!,
+                    classId: widget.classId,
+                    topicId: group?.topicId,
+                    enabled: group?.topicId != null,
+                    disabledReason: group?.topicId == null
+                        ? 'Buổi này chưa gán chuyên đề, không giao bài theo buổi được'
+                        : null,
+                    scopeLabel:
+                        'chương "${group?.displayName ?? '—'}" (từ buổi này)',
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               if (widget.studentId != null)
                 SessionAnalysisCard(analysis: b.analysis),
               SectionCard(

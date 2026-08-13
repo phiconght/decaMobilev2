@@ -5,6 +5,7 @@ import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/reports/view/session_report_page.dart';
 import 'package:deca_mobile/reports/view/student_exam_detail_page.dart';
+import 'package:deca_mobile/reports/widgets/assign_practice_button.dart';
 import 'package:deca_mobile/reports/widgets/chapter_analysis_card.dart';
 import 'package:deca_mobile/reports/widgets/exam_cards.dart';
 import 'package:deca_mobile/reports/widgets/report_charts.dart';
@@ -36,6 +37,7 @@ class ChapterReportPage extends StatefulWidget {
     required this.topicId,
     required this.topicName,
     this.studentId,
+    this.canAssign = false,
     super.key,
   });
 
@@ -45,6 +47,10 @@ class ChapterReportPage extends StatefulWidget {
   final int topicId;
   final String topicName;
   final int? studentId;
+
+  /// Hiện nút "Giao bài tập" phạm vi chương này (§10, mở rộng 11/08/2026).
+  /// Chỉ có tác dụng khi [studentId] khác null (cần 1 HV cụ thể để giao).
+  final bool canAssign;
 
   @override
   State<ChapterReportPage> createState() => _ChapterReportPageState();
@@ -111,6 +117,7 @@ class _ChapterReportPageState extends State<ChapterReportPage> {
           classId: widget.classId,
           sessionId: sessionId,
           studentId: widget.studentId,
+          canAssign: widget.canAssign,
         ),
       ),
     );
@@ -164,6 +171,19 @@ class _ChapterReportPageState extends State<ChapterReportPage> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (widget.canAssign && widget.studentId != null) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: AssignPracticeButton(
+                    repository: widget.repository,
+                    studentId: widget.studentId!,
+                    classId: widget.classId,
+                    topicId: widget.topicId,
+                    scopeLabel: 'chương "${widget.topicName}"',
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               if (widget.studentId != null)
                 ChapterAnalysisCard(analysis: b.analysis),
               if (widget.studentId != null)

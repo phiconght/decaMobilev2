@@ -38,9 +38,13 @@ abstract class ReportsRepository {
   Future<ScoreDistribution> courseSpectrum(int studentId, int classId,
       {int bandCount});
   Future<ScoreDistribution> classCourseSpectrum(int classId, {int bandCount});
-  // Giao bai (§10)
+  // Giao bai (§10). examId = bai thi nguon (tuy chon) — null khi giao truc
+  // tiep tu cap khoa/chuong/buoi thay vi tu 1 bai thi cu the.
   Future<PracticeAssignmentResult> assignPractice(
-      int studentId, int classId, {required int examId, int? topicId});
+      int studentId, int classId, {int? examId, int? topicId});
+  // Toan bo de da giao cho 1 HV, gop MOI lop — the "Bai phu huynh giao"
+  // o tab Khoa hoc (§10.11).
+  Future<List<PracticeAssignmentItem>> myPracticeAssignments(int studentId);
   // Lop
   Future<List<ClassExamAverage>> classExamAverages(int classId,
       {int? topicId});
@@ -177,14 +181,26 @@ class ReportsRepositoryImpl implements ReportsRepository {
   Future<PracticeAssignmentResult> assignPractice(
     int studentId,
     int classId, {
-    required int examId,
+    int? examId,
     int? topicId,
   }) async {
     final data = await _api.post(
       '$_base/students/$studentId/classes/$classId/assign-practice',
-      body: {'examId': examId, if (topicId != null) 'topicId': topicId},
+      body: {
+        if (examId != null) 'examId': examId,
+        if (topicId != null) 'topicId': topicId,
+      },
     );
     return PracticeAssignmentResult.fromJson(_map(data));
+  }
+
+  @override
+  Future<List<PracticeAssignmentItem>> myPracticeAssignments(
+    int studentId,
+  ) async {
+    final data =
+        await _api.get('$_base/students/$studentId/practice-assignments');
+    return _list(data, PracticeAssignmentItem.fromJson);
   }
 
   @override

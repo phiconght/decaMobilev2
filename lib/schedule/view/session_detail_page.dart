@@ -5,29 +5,56 @@ import 'package:deca_mobile/auth/data/auth_repository.dart';
 import 'package:deca_mobile/core/network/api_exception.dart';
 import 'package:deca_mobile/core/widgets/app_bottom_sheet.dart';
 import 'package:deca_mobile/core/widgets/app_snackbar.dart';
-import 'package:deca_mobile/core/widgets/info_row.dart';
 import 'package:deca_mobile/core/widgets/primary_button.dart';
 import 'package:deca_mobile/core/widgets/section_card.dart';
+import 'package:deca_mobile/exams/view/exam_paper_page.dart';
+import 'package:deca_mobile/exams/widgets/exam_status_chip.dart';
 import 'package:deca_mobile/schedule/cubit/timetable_cubit.dart';
 import 'package:deca_mobile/schedule/data/attendance_repository.dart';
 import 'package:deca_mobile/schedule/data/models/qr_payload.dart';
+import 'package:deca_mobile/schedule/data/models/session_content.dart';
 import 'package:deca_mobile/schedule/data/models/timetable_item.dart';
+import 'package:deca_mobile/schedule/data/session_content_repository.dart';
 import 'package:deca_mobile/schedule/data/timetable_repository.dart';
 import 'package:deca_mobile/schedule/view/attendance_page.dart';
 import 'package:deca_mobile/schedule/view/leave_form_page.dart';
 import 'package:deca_mobile/schedule/view/qr_scan_page.dart';
+import 'package:deca_mobile/schedule/widgets/attendance_badge.dart';
 import 'package:deca_mobile/schedule/widgets/qr_view.dart';
 import 'package:deca_mobile/schedule/widgets/status_chips.dart';
+import 'package:deca_mobile/schedule/widgets/youtube_player_tile.dart';
+import 'package:deca_mobile/schedule/widgets/zoom_link_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-/// Chi tiet mot buoi hoc — thong tin va hanh dong theo view.
-class SessionDetailPage extends StatelessWidget {
+/// Chi tiet mot buoi hoc — thong tin, video/zoom, va hanh dong theo view.
+class SessionDetailPage extends StatefulWidget {
   const SessionDetailPage({required this.item, required this.view, super.key});
 
   final TimetableItem item;
   final String view;
+
+  @override
+  State<SessionDetailPage> createState() => _SessionDetailPageState();
+}
+
+class _SessionDetailPageState extends State<SessionDetailPage> {
+  TimetableItem get item => widget.item;
+  String get view => widget.view;
+
+  late Future<List<SessionVideoItem>> _videosFuture;
+  late Future<List<ZoomLinkItem>> _zoomLinksFuture;
+  late Future<List<SessionExamItem>> _examsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final repo = context.read<SessionContentRepository>();
+    _videosFuture = repo.fetchVideos(item.sessionId);
+    _zoomLinksFuture = repo.fetchZoomLinks(item.sessionId);
+    _examsFuture = repo.fetchExams(item.sessionId);
+  }
 
   static final DateFormat _dateFmt = DateFormat('dd/MM/yyyy');
 
@@ -40,16 +67,6 @@ class SessionDetailPage extends StatelessWidget {
         DateTime.friday => 'Thứ Sáu',
         DateTime.saturday => 'Thứ Bảy',
         _ => 'Chủ Nhật',
-      };
-
-  /// Nhan tieng Viet cho trang thai diem danh cua HV.
-  static String _attendanceLabel(AttendanceStatus? status) => switch (status) {
-        AttendanceStatus.coMat => 'Có mặt',
-        AttendanceStatus.tre => 'Trễ',
-        AttendanceStatus.vang => 'Vắng',
-        AttendanceStatus.coPhep => 'Có phép',
-        AttendanceStatus.chuaCheckin => 'Chưa điểm danh',
-        null => 'Chưa điểm danh',
       };
 
   String get _dayLabel =>
@@ -204,38 +221,147 @@ class SessionDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            SectionCard(
-              title: 'Thông tin buổi',
-              child: Column(
-                children: [
-                  InfoRow(label: 'Ngày', value: _dayLabel),
-                  InfoRow(
-                    label: 'Giờ',
-                    value: '${item.startTime} – ${item.endTime}',
-                  ),
-                  InfoRow(label: 'Phòng', value: roomValue),
-                  InfoRow(
-                    label: 'Giáo viên',
-                    value: item.teacherName ?? '—',
-                  ),
-                  if (view == 'STUDENT' || view == 'PARENT') ...[
-                    InfoRow(
-                      label: 'Điểm danh',
-                      value: _attendanceLabel(item.attendanceStatus),
+            // Gon lai thanh cac "chip" icon+chu tren cung 1-2 dong thay vi
+            // 6 dong nhan:gia tri rieng le (§ ton dien tich, phan hoi
+            // 11/08/2026). AttendanceBadge tu an neu khong co gi de hien
+            // (khong con dong "Nghỉ phép: Không" thua).
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Wrap(
+                  spacing: 14,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _MetaChip(
+                      icon: Icons.calendar_today_outlined,
+                      text: _dayLabel,
                     ),
-                    InfoRow(
-                      label: 'Nghỉ phép',
-                      value: item.onLeave ? 'Có' : 'Không',
+                    _MetaChip(
+                      icon: Icons.access_time,
+                      text: '${item.startTime} – ${item.endTime}',
                     ),
+                    _MetaChip(
+                      icon: Icons.meeting_room_outlined,
+                      text: roomValue,
+                    ),
+                    _MetaChip(
+                      icon: Icons.person_outline,
+                      text: item.teacherName ?? '—',
+                    ),
+                    if (view == 'STUDENT' || view == 'PARENT')
+                      AttendanceBadge(
+                        status: item.attendanceStatus,
+                        onLeave: item.onLeave,
+                      ),
                   ],
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
+            _buildZoomSection(context),
+            _buildVideoSection(context),
             ..._buildActions(context, user, perms, isCancelled: isCancelled),
+            _buildExamSection(context),
           ],
         ),
       ),
+    );
+  }
+
+  /// Dang trong khung gio buoi hoc: tu truoc gio bat dau 15' den het gio ket
+  /// thuc — nut "Tham gia Zoom" chi noi bat trong khoang nay, tranh HV bam
+  /// nham ngay khac (SPEC_VideoBaiGiang_Zoom.md §5.1).
+  bool get _isWithinSessionWindow {
+    final now = DateTime.now();
+    if (!_isSameDay(item.date, now)) return false;
+    DateTime? parseHHmm(String hhmm) {
+      final parts = hhmm.split(':');
+      if (parts.length < 2) return null;
+      final h = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1]);
+      if (h == null || m == null) return null;
+      return DateTime(item.date.year, item.date.month, item.date.day, h, m);
+    }
+
+    final start = parseHHmm(item.startTime);
+    final end = parseHHmm(item.endTime);
+    if (start == null || end == null) return false;
+    final windowStart = start.subtract(const Duration(minutes: 15));
+    return !now.isBefore(windowStart) && !now.isAfter(end);
+  }
+
+  Widget _buildZoomSection(BuildContext context) {
+    return FutureBuilder<List<ZoomLinkItem>>(
+      future: _zoomLinksFuture,
+      builder: (context, snapshot) {
+        final links = snapshot.data ?? const <ZoomLinkItem>[];
+        if (links.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: SectionCard(
+            title: 'Link Zoom',
+            child: Column(
+              children: [
+                for (final link in links)
+                  ZoomLinkTile(
+                    link: link,
+                    isWithinSessionWindow: _isWithinSessionWindow,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildVideoSection(BuildContext context) {
+    return FutureBuilder<List<SessionVideoItem>>(
+      future: _videosFuture,
+      builder: (context, snapshot) {
+        final videos = snapshot.data ?? const <SessionVideoItem>[];
+        if (videos.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: SectionCard(
+            title: 'Video bài giảng',
+            child: Column(
+              children: [
+                for (final video in videos) YoutubePlayerTile(video: video),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// De thi cua RIENG buoi nay — o DUOI CUNG trang, mo ra la danh sach, bam
+  /// vao 1 de la vao thang man lam bai (khong phai qua man Khoa hoc).
+  Widget _buildExamSection(BuildContext context) {
+    return FutureBuilder<List<SessionExamItem>>(
+      future: _examsFuture,
+      builder: (context, snapshot) {
+        final exams = snapshot.data ?? const <SessionExamItem>[];
+        if (exams.isEmpty) return const SizedBox.shrink();
+        return Card(
+          margin: EdgeInsets.zero,
+          child: ExpansionTile(
+            initiallyExpanded: true,
+            title: Text('Đề thi (${exams.length})'),
+            leading: const Icon(Icons.quiz_outlined),
+            childrenPadding: const EdgeInsets.only(bottom: 8),
+            children: [
+              for (final exam in exams) _ExamRow(exam: exam),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -354,7 +480,12 @@ class SessionDetailPage extends StatelessWidget {
     required bool isCancelled,
     required bool future,
   }) {
-    if (isCancelled || item.status != SessionStatus.planned || !future) {
+    // studentId co the vang mat khi man nay duoc mo tu ngu canh khong biet
+    // dang xem con nao (vd tab Khoa hoc) — khong du de dung form xin nghi.
+    if (isCancelled ||
+        item.status != SessionStatus.planned ||
+        !future ||
+        item.studentId == null) {
       return const [];
     }
     return [
@@ -474,5 +605,83 @@ class SessionDetailPage extends StatelessWidget {
     }
 
     return actions;
+  }
+}
+
+/// 1 dong de thi trong mucc "Đề thi" cua SessionDetailPage — bam vao mo
+/// thang man lam bai (ExamPaperPage).
+class _ExamRow extends StatelessWidget {
+  const _ExamRow({required this.exam});
+
+  final SessionExamItem exam;
+
+  static final DateFormat _dateFmt = DateFormat('dd/MM/yyyy HH:mm');
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final subtitle = <String>[
+      if (exam.publishAt != null)
+        'Bắt đầu ${_dateFmt.format(exam.publishAt!.toLocal())}',
+      if (exam.durationMinutes != null) '${exam.durationMinutes} phút',
+    ].join(' · ');
+
+    return ListTile(
+      leading: const Icon(Icons.description_outlined),
+      title: Text(exam.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (subtitle.isNotEmpty)
+            Text(subtitle, style: theme.textTheme.bodySmall),
+          if (exam.isSubmitted && exam.score != null)
+            Text(
+              'Đã nộp · ${_formatScore(exam.score!)} điểm',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Text(
+              'Chưa làm bài',
+              style: theme.textTheme.labelSmall?.copyWith(color: muted),
+            ),
+        ],
+      ),
+      trailing: ExamStatusChip(exam.status),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ExamPaperPage(exam: exam.toExam()),
+        ),
+      ),
+    );
+  }
+
+  static String _formatScore(double v) =>
+      v % 1 == 0 ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+}
+
+/// 1 muc thong tin gon (icon + chu) — thay InfoRow day dong de rut gon
+/// khoi "Thông tin buổi" tu 6 dong xuong con 1-2 dong (Wrap).
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 15, color: muted),
+        const SizedBox(width: 4),
+        Text(text, style: theme.textTheme.bodySmall),
+      ],
+    );
   }
 }
