@@ -16,7 +16,7 @@ class SessionCards extends StatelessWidget {
       return const Text('Chưa có buổi học nào.');
     }
     return SizedBox(
-      height: 100,
+      height: 72,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: sessions.length,
@@ -24,30 +24,34 @@ class SessionCards extends StatelessWidget {
         itemBuilder: (context, i) {
           final s = sessions[i];
           return SizedBox(
-            width: 160,
+            width: 120,
             child: Card(
               margin: EdgeInsets.zero,
               child: InkWell(
                 onTap: () => onTap(s.sessionId),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         'Buổi ${s.ordinal ?? '—'}',
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                            fontSize: 13, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(s.title ?? 'Chưa đặt tên',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12)),
+                          style: const TextStyle(fontSize: 11)),
                       Text(
                         DateFormat('dd/MM').format(s.date),
                         style:
-                            const TextStyle(fontSize: 11, color: Colors.grey),
+                            const TextStyle(fontSize: 10, color: Colors.grey),
                       ),
                     ],
                   ),

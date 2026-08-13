@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class CourseCard extends StatelessWidget {
-  const CourseCard({required this.course, required this.onTap, super.key});
+  const CourseCard({required this.course, this.onTap, super.key});
 
   final Course course;
-  final VoidCallback onTap;
+
+  /// null = chỉ xem, không mở chi tiết được (vd danh mục "Tất cả khóa học").
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +68,7 @@ class CourseCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right),
+              if (onTap != null) const Icon(Icons.chevron_right),
             ],
           ),
         ),

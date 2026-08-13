@@ -8,7 +8,10 @@ abstract class CoursesRepository {
 
   /// Cay noi dung 1 khoa: chuyen de -> buoi hoc + de thi.
   /// [studentId] BAT BUOC voi PARENT (co the co nhieu con); STUDENT bo qua.
-  Future<ClassOutline> fetchOutline(int classId, {int? studentId});
+  /// [onlyDone] true = BE tra ve CHI chuong/buoi DA HOC, da sap theo ngay
+  /// GAN NHAT (dung cho man Bao cao — yeu cau nguoi dung 13/08/2026).
+  Future<ClassOutline> fetchOutline(int classId,
+      {int? studentId, bool onlyDone = false});
 }
 
 /// Cai dat — lay danh sach lop ma hoc vien dang dang nhap da duoc ghi danh
@@ -28,10 +31,14 @@ class CoursesRepositoryImpl implements CoursesRepository {
   }
 
   @override
-  Future<ClassOutline> fetchOutline(int classId, {int? studentId}) async {
+  Future<ClassOutline> fetchOutline(int classId,
+      {int? studentId, bool onlyDone = false}) async {
     final data = await _api.get(
       '/api/v1/classes/$classId/outline',
-      query: studentId == null ? null : {'studentId': '$studentId'},
+      query: {
+        if (studentId != null) 'studentId': '$studentId',
+        if (onlyDone) 'onlyDone': 'true',
+      },
     );
     return ClassOutline.fromJson(data! as Map<String, dynamic>);
   }

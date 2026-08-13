@@ -216,11 +216,6 @@ class _StudentExamDetailPageState extends State<StudentExamDetailPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              SectionCard(
-                title: 'Phổ điểm của lớp',
-                child: ScoreDistributionChart(data: d.distribution),
-              ),
-              const SizedBox(height: 16),
 
               if (widget.canAssign) ...[
                 Row(

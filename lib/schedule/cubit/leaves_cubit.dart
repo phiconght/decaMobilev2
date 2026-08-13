@@ -40,4 +40,9 @@ class LeavesCubit extends Cubit<DataState<List<LeaveItem>>> {
     await _repo.reject(id);
     await load();
   }
+
+  Future<void> confirmByParent(int id) async {
+    await _repo.confirmByParent(id);
+    await load();
+  }
 }

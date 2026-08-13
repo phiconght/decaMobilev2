@@ -18,7 +18,7 @@ class ChapterCards extends StatelessWidget {
       return const Text('Chưa có chương nào.');
     }
     return SizedBox(
-      height: 100,
+      height: 72,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
@@ -29,30 +29,34 @@ class ChapterCards extends StatelessWidget {
               ? scoreColor(t.masteryPct!)
               : Colors.grey;
           return SizedBox(
-            width: 160,
+            width: 120,
             child: Card(
               margin: EdgeInsets.zero,
               child: InkWell(
                 onTap: () => onTap(t.topicId!),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         t.masteryPct != null
                             ? '${(t.masteryPct! * 100).round()}%'
                             : '—',
                         style: TextStyle(
-                            fontSize: 22,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: color),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(t.topicName,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12)),
+                          style: const TextStyle(fontSize: 11)),
                     ],
                   ),
                 ),

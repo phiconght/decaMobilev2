@@ -32,6 +32,8 @@ class LeaveItem {
     this.reason,
     this.reviewedBy,
     this.reviewedAt,
+    this.parentConfirmedBy,
+    this.parentConfirmedAt,
     this.createdAt,
   });
 
@@ -52,6 +54,10 @@ class LeaveItem {
       reviewedBy: json['reviewedBy'] as String?,
       reviewedAt:
           DateTime.tryParse(json['reviewedAt'] as String? ?? '')?.toLocal(),
+      parentConfirmedBy: json['parentConfirmedBy'] as String?,
+      parentConfirmedAt: DateTime.tryParse(
+        json['parentConfirmedAt'] as String? ?? '',
+      )?.toLocal(),
       createdAt:
           DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal(),
     );
@@ -71,6 +77,10 @@ class LeaveItem {
   final LeaveStatus status;
   final String? reviewedBy;
   final DateTime? reviewedAt;
+  /// Phụ huynh xác nhận đơn — bắt buộc trước khi GV/nhân viên duyệt được
+  /// (yêu cầu người dùng 13/08/2026).
+  final String? parentConfirmedBy;
+  final DateTime? parentConfirmedAt;
   final DateTime? createdAt;
 
   static DateTime? _parseDate(String? s) =>

@@ -1,8 +1,10 @@
 import 'package:deca_mobile/core/widgets/section_card.dart';
 import 'package:deca_mobile/courses/data/courses_repository.dart';
+import 'package:deca_mobile/courses/data/models/class_outline.dart';
 import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:deca_mobile/reports/view/chapter_report_page.dart';
+import 'package:deca_mobile/reports/view/session_report_page.dart';
 import 'package:deca_mobile/reports/view/student_exam_detail_page.dart';
 import 'package:deca_mobile/reports/widgets/analysis_card.dart';
 import 'package:deca_mobile/reports/widgets/chapter_cards.dart';
@@ -10,18 +12,23 @@ import 'package:deca_mobile/reports/widgets/assign_practice_button.dart';
 import 'package:deca_mobile/reports/widgets/comments_section.dart';
 import 'package:deca_mobile/reports/widgets/report_charts.dart';
 import 'package:deca_mobile/reports/widgets/score_color.dart';
+import 'package:deca_mobile/reports/widgets/session_cards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+/// Thứ tự cố định: bài thi, buổi học, rồi chương học.
+enum _ReportTab { exams, sessions, chapters }
+
 class _Bundle {
   const _Bundle(this.trend, this.breakdown, this.mastery, this.attendance,
-      this.analysis);
+      this.analysis, this.sessions);
   final List<ScoreTrendPoint> trend;
   final Breakdown breakdown;
   final List<TopicMastery> mastery;
   final StudentAttendanceReport attendance;
   final ReportAnalysis? analysis;
+  final List<OutlineSession> sessions;
 }
 
 /// Thân báo cáo của 1 học viên (HS xem mình / PH xem con).
@@ -54,6 +61,7 @@ class _StudentReportViewState extends State<StudentReportView> {
   int? _classId;
   Future<_Bundle>? _bundleFuture;
   bool _byType = false;
+  _ReportTab _reportTab = _ReportTab.exams;
 
   @override
   void initState() {
@@ -78,12 +86,27 @@ class _StudentReportViewState extends State<StudentReportView> {
       _classExams = const [];
       _bundleFuture = _loadBundle(classId);
     });
-    // Tất cả bài thi của lớp (không giới hạn) cho danh sách cuộn ngang.
+    // Tất cả bài thi của lớp (không giới hạn) cho danh sách cuộn ngang —
+    // sắp theo ngày gần nhất trước (yêu cầu người dùng 13/08/2026).
     widget.repository.examHistory(widget.studentId, classId).then((list) {
       if (mounted && _classId == classId) {
-        setState(() => _classExams = list);
+        final sorted = [...list]..sort(_byMostRecent((e) => e.submittedAt));
+        setState(() => _classExams = sorted);
       }
     });
+  }
+
+  /// Comparator dùng chung: ngày gần nhất (mới nhất) lên trước, null xuống
+  /// cuối — dùng cho cả bài thi/buổi học/chương học (yêu cầu 13/08/2026).
+  static int Function(T, T) _byMostRecent<T>(DateTime? Function(T) dateOf) {
+    return (a, b) {
+      final da = dateOf(a);
+      final db = dateOf(b);
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return db.compareTo(da);
+    };
   }
 
   Future<_Bundle> _loadBundle(int classId) async {
@@ -93,15 +116,59 @@ class _StudentReportViewState extends State<StudentReportView> {
       widget.repository.topicMastery(widget.studentId, classId),
       widget.repository.attendance(widget.studentId, classId),
       widget.repository.analysis(widget.studentId, classId),
+      context.read<CoursesRepository>().fetchOutline(
+            classId,
+            studentId: widget.studentId,
+            // BE tra CHI chuong/buoi ĐÃ HỌC, đã sắp theo ngày gần nhất
+            // (yêu cầu 13/08/2026) — không lọc/sắp lại ở client nữa.
+            onlyDone: true,
+          ),
     ]);
-    final mastery = results[2] as List<TopicMastery>;
+    final outline = results[5] as ClassOutline;
+    // Buổi: gộp phẳng qua các chương để có 1 dòng thời gian chung — BE chỉ
+    // sắp xếp trong/giữa từng nhóm chương, nên vẫn cần sắp lại theo ngày khi
+    // gộp phẳng liên chương.
+    final sessions = outline.groups.expand((g) => g.sessions).toList()
+      ..sort(_byMostRecent((s) => s.date));
+
+    // Chương: giữ đúng thứ tự BE đã trả (đã lọc + sắp theo ngày gần nhất) —
+    // topicMastery() là API khác (chỉ có %masteryPct), không tự có thứ tự đó.
+    final chapterOrder = [
+      for (final g in outline.groups)
+        if (g.topicId != null) g.topicId!,
+    ];
+    final mastery = (results[2] as List<TopicMastery>)
+        .where((t) => t.topicId != null && chapterOrder.contains(t.topicId))
+        .toList()
+      ..sort((a, b) => chapterOrder
+          .indexOf(a.topicId!)
+          .compareTo(chapterOrder.indexOf(b.topicId!)));
     _mastery = mastery;
+
     return _Bundle(
       results[0] as List<ScoreTrendPoint>,
       results[1] as Breakdown,
       mastery,
       results[3] as StudentAttendanceReport,
       results[4] as ReportAnalysis,
+      sessions,
+    );
+  }
+
+  void _openSession(int sessionId) {
+    final classId = _classId;
+    if (classId == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionReportPage(
+          repository: widget.repository,
+          coursesRepository: context.read<CoursesRepository>(),
+          classId: classId,
+          sessionId: sessionId,
+          studentId: widget.studentId,
+          canAssign: widget.canComment,
+        ),
+      ),
     );
   }
 
@@ -192,12 +259,6 @@ class _StudentReportViewState extends State<StudentReportView> {
               const SizedBox(height: 16),
             ],
 
-            Text('Tất cả bài thi (${_classExams.length})',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _RecentRow(exams: _classExams, onTap: _openExam),
-            const SizedBox(height: 16),
-
             if (_bundleFuture != null)
               FutureBuilder<_Bundle>(
                 future: _bundleFuture,
@@ -215,17 +276,51 @@ class _StudentReportViewState extends State<StudentReportView> {
                   final att = b.attendance.summary;
                   return Column(
                     children: [
-                      Text('Báo cáo theo chương học',
-                          style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 8),
-                      ChapterCards(
-                        topics: b.mastery,
-                        onTap: (topicId) {
-                          final t = b.mastery
-                              .firstWhere((m) => m.topicId == topicId);
-                          _openChapter(t);
-                        },
+                      // Cụm "bài thi / buổi học / chương học" — 1 hàng chọn
+                      // + 1 khối nội dung dùng chung, thay vì 3 khối riêng
+                      // (tốn diện tích — yêu cầu người dùng 13/08/2026).
+                      // Thứ tự cố định: bài thi, buổi học, rồi chương học.
+                      SegmentedButton<_ReportTab>(
+                        segments: [
+                          ButtonSegment(
+                            value: _ReportTab.exams,
+                            label: Text('Bài thi (${_classExams.length})'),
+                          ),
+                          const ButtonSegment(
+                            value: _ReportTab.sessions,
+                            label: Text('Buổi học'),
+                          ),
+                          const ButtonSegment(
+                            value: _ReportTab.chapters,
+                            label: Text('Chương học'),
+                          ),
+                        ],
+                        style: const ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        showSelectedIcon: false,
+                        selected: {_reportTab},
+                        onSelectionChanged: (s) =>
+                            setState(() => _reportTab = s.first),
                       ),
+                      const SizedBox(height: 8),
+                      switch (_reportTab) {
+                        _ReportTab.exams =>
+                          _RecentRow(exams: _classExams, onTap: _openExam),
+                        _ReportTab.sessions => SessionCards(
+                            sessions: b.sessions,
+                            onTap: _openSession,
+                          ),
+                        _ReportTab.chapters => ChapterCards(
+                            topics: b.mastery,
+                            onTap: (topicId) {
+                              final t = b.mastery
+                                  .firstWhere((m) => m.topicId == topicId);
+                              _openChapter(t);
+                            },
+                          ),
+                      },
                       const SizedBox(height: 16),
                       AnalysisCard(analysis: b.analysis),
                       SectionCard(
@@ -327,7 +422,7 @@ class _RecentRow extends StatelessWidget {
     }
     // Cuộn NGANG tất cả bài thi của lớp.
     return SizedBox(
-      height: 118,
+      height: 76,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: exams.length,
@@ -336,33 +431,37 @@ class _RecentRow extends StatelessWidget {
           final e = exams[i];
           final color = scoreColor(e.ratio);
           return SizedBox(
-            width: 150,
+            width: 120,
             child: Card(
               margin: EdgeInsets.zero,
               child: InkWell(
                 onTap: () => onTap(e),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         e.score?.toStringAsFixed(1) ?? '—',
                         style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: color),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(e.examName,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12)),
+                          style: const TextStyle(fontSize: 11)),
                       if (e.submittedAt != null)
                         Text(
                           DateFormat('dd/MM').format(e.submittedAt!),
                           style: const TextStyle(
-                              fontSize: 11, color: Colors.grey),
+                              fontSize: 10, color: Colors.grey),
                         ),
                     ],
                   ),

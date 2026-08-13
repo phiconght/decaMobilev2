@@ -20,11 +20,12 @@ class LeavesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isApprover =
-        context.read<AuthCubit>().state.user?.permissions.contains(
-              'LEAVE:APPROVE',
-            ) ??
-            false;
+    final permissions =
+        context.read<AuthCubit>().state.user?.permissions ?? const [];
+    final isApprover = permissions.contains('LEAVE:APPROVE');
+    // Phụ huynh xác nhận đơn xin nghỉ của con — bắt buộc trước khi GV/nhân
+    // viên duyệt được (yêu cầu người dùng 13/08/2026).
+    final canConfirmParent = permissions.contains('LEAVE:CONFIRM');
     return BlocProvider(
       create: (ctx) {
         final cubit = LeavesCubit(
@@ -34,15 +35,19 @@ class LeavesPage extends StatelessWidget {
         unawaited(cubit.load());
         return cubit;
       },
-      child: _LeavesView(isApprover: isApprover),
+      child: _LeavesView(
+        isApprover: isApprover,
+        canConfirmParent: canConfirmParent,
+      ),
     );
   }
 }
 
 class _LeavesView extends StatelessWidget {
-  const _LeavesView({required this.isApprover});
+  const _LeavesView({required this.isApprover, required this.canConfirmParent});
 
   final bool isApprover;
+  final bool canConfirmParent;
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +63,11 @@ class _LeavesView extends StatelessWidget {
             emptyMessage: isApprover
                 ? 'Không có đơn chờ duyệt.'
                 : 'Bạn chưa có đơn xin nghỉ nào.',
-            itemBuilder: (ctx, item) =>
-                _LeaveCard(item: item, isApprover: isApprover),
+            itemBuilder: (ctx, item) => _LeaveCard(
+              item: item,
+              isApprover: isApprover,
+              canConfirmParent: canConfirmParent,
+            ),
           );
         },
       ),
@@ -68,10 +76,15 @@ class _LeavesView extends StatelessWidget {
 }
 
 class _LeaveCard extends StatelessWidget {
-  const _LeaveCard({required this.item, required this.isApprover});
+  const _LeaveCard({
+    required this.item,
+    required this.isApprover,
+    required this.canConfirmParent,
+  });
 
   final LeaveItem item;
   final bool isApprover;
+  final bool canConfirmParent;
 
   static final DateFormat _fmt = DateFormat('dd/MM/yyyy');
 
@@ -131,6 +144,33 @@ class _LeaveCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text('Lý do: $reason'),
             ],
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              item.parentConfirmedBy != null
+                  ? 'PH đã xác nhận: ${item.parentConfirmedBy}'
+                  : 'Phụ huynh chưa xác nhận',
+              style: TextStyle(
+                fontSize: 12,
+                color: item.parentConfirmedBy != null
+                    ? Colors.green
+                    : Colors.grey,
+              ),
+            ),
+            if (canConfirmParent &&
+                item.parentConfirmedBy == null &&
+                item.status == LeaveStatus.pending) ...[
+              const SizedBox(height: AppSpacing.md),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.tonal(
+                  onPressed: () => _act(
+                    context,
+                    context.read<LeavesCubit>().confirmByParent,
+                  ),
+                  child: const Text('Xác nhận (phụ huynh)'),
+                ),
+              ),
+            ],
             if (isApprover && item.status == LeaveStatus.pending) ...[
               const SizedBox(height: AppSpacing.md),
               Row(
@@ -143,8 +183,12 @@ class _LeaveCard extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   FilledButton(
-                    onPressed: () =>
-                        _act(context, context.read<LeavesCubit>().approve),
+                    onPressed: item.parentConfirmedBy == null
+                        ? null
+                        : () => _act(
+                              context,
+                              context.read<LeavesCubit>().approve,
+                            ),
                     child: const Text('Duyệt'),
                   ),
                 ],
