@@ -128,19 +128,17 @@ class _BrandHeader extends StatelessWidget {
         Container(
           width: 88,
           height: 88,
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: theme.colorScheme.primaryContainer,
             borderRadius: AppRadii.rxl,
           ),
-          child: Icon(
-            Icons.school_rounded,
-            size: 48,
-            color: theme.colorScheme.onPrimaryContainer,
-          ),
+          child: Image.asset('assets/images/logo_deca.png'),
         ),
         AppSpacing.gapLg,
         Text(
-          'Trung tâm đào tạo',
+          'Trung tâm giáo dục DecaMath',
+          textAlign: TextAlign.center,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w700,
           ),

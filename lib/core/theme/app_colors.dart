@@ -2,24 +2,45 @@ import 'package:flutter/material.dart';
 
 /// Bang mau thuong hieu + mau ngu nghia (semantic) dung toan he thong.
 ///
-/// Chu dao DO ruby tren nen TRANG am (xem Mobile_MauSac_DoTrang.md).
+/// Chu dao COBALT tren nen GIAY AM (xem ThietKe/Mobile/KE_HOACH_TRIEN_KHAI.md §2).
 /// Mau ngu nghia co dinh, KHONG sinh tu seed — de nhat quan trang thai
 /// (dat/chua dat, dang hoc/ket thuc...) tren ca light & dark.
-///
-/// QUY TAC CHONG LAN MAU:
-/// - [brand] do = HANH DONG & THUONG HIEU (nut chinh, link, tab chon).
-/// - [danger] do-nau = TRANG THAI XAU (loi/vang/khoa) — luon kem icon.
-/// Khong dung brand cho loi, khong dung danger cho nut/hanh dong.
 abstract final class AppColors {
-  /// Do brick-ruby (da giam bao hoa cho bot choi) — mau hat giong + primary.
-  static const brand = Color(0xFFBE2A3D);
+  // Nen giay am + card.
+  static const paper = Color(0xFFF7F4EC);
+  static const card = Color(0xFFFFFFFF);
+  static const cardWarm = Color(0xFFFFFDF8);
 
-  static const success = Color(0xFF1E8E3E); // xanh la tram — dat / dang hoc
-  static const warning = Color(0xFFB26A00); // amber dam — canh bao / trung binh
-  static const danger = Color(0xFF8C1D18); // do-nau — loi / chua dat / khoa
-  static const info = Color(0xFF3A5A80); // xanh thep tram — thong tin
-  static const neutral = Color(0xFF7A6E6C); // xam am — khong hoat dong
+  // Chu.
+  static const ink = Color(0xFF1C1B2E);
+  static const inkSoft = Color(0xFF6E6C82);
+  static const inkFaint = Color(0xFFA7A4B8);
 
-  /// Vang dong — diem nhan quy (huy hieu diem cao, tag "Hom nay"). Dung < 2%.
-  static const gold = Color(0xFFB98A2C);
+  // Vien.
+  static const line = Color(0xFFE9E4D8);
+  static const lineSoft = Color(0xFFEFEBE1);
+
+  /// PRIMARY — nut chinh, active tab, link.
+  static const brand = Color(0xFF2E43E8);
+  static const brandDark = Color(0xFF1E2FB8);
+  static const brandTint = Color(0xFFEBEDFC);
+
+  /// DANGER/ACCENT — loi, vang, gia khuyen mai, nut "Thoat".
+  static const danger = Color(0xFFFF5D6C);
+  static const dangerTint = Color(0xFFFFEAEC);
+
+  /// WARNING — cho duyet, canh bao, Xu/coin.
+  static const warning = Color(0xFFF2A93B);
+  static const warningDark = Color(0xFFC97F1B);
+  static const warningTint = Color(0xFFFBF0DC);
+
+  /// SUCCESS — dat/co mat/da thanh toan/dung.
+  static const success = Color(0xFF2FAE7A);
+  static const successTint = Color(0xFFE7F7EF);
+
+  /// INFO — trung tinh, dung khi khong co semantic ro rang.
+  static const info = brand;
+
+  /// Khong hoat dong / trung lap.
+  static const neutral = Color(0xFF7A6E6C);
 }

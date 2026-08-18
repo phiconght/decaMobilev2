@@ -13,12 +13,17 @@ class QuickAction {
     this.onTap,
     this.enabled = true,
     this.roles = const [],
+    this.tint,
   });
 
   final String id;
   final String label;
   final IconData icon;
   final WidgetBuilder? builder;
+
+  /// Mau nen icon rieng (vd theo token AppColors). Null = dung
+  /// primaryContainer mac dinh cua theme.
+  final Color? tint;
 
   /// Hanh dong tuy chinh (vd doi tab). Uu tien truoc [builder].
   final void Function(BuildContext context)? onTap;

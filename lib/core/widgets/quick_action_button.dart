@@ -15,9 +15,12 @@ class QuickActionButton extends StatelessWidget {
         action.enabled && (action.onTap != null || action.builder != null);
     final disabledFg =
         theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.45);
-    final color = isEnabled ? theme.colorScheme.primary : disabledFg;
+    final tint = action.tint;
+    final color = isEnabled
+        ? (tint ?? theme.colorScheme.primary)
+        : disabledFg;
     final bgColor = isEnabled
-        ? theme.colorScheme.primaryContainer
+        ? (tint?.withValues(alpha: 0.14) ?? theme.colorScheme.primaryContainer)
         : theme.colorScheme.surfaceContainerHighest;
 
     return SizedBox(

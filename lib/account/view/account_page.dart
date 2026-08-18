@@ -83,7 +83,10 @@ class AccountPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Trung tâm đào tạo', style: theme.textTheme.titleLarge),
+            Text(
+              'Trung tâm giáo dục DecaMath',
+              style: theme.textTheme.titleLarge,
+            ),
             AppSpacing.gapXs,
             Text(
               'Phiên bản 1.0.0',
@@ -93,8 +96,8 @@ class AccountPage extends StatelessWidget {
             ),
             AppSpacing.gapMd,
             Text(
-              'Ứng dụng học tập dành cho học sinh và phụ huynh của hệ thống '
-              'quản lý trung tâm đào tạo.',
+              'Ứng dụng học tập dành cho học sinh và phụ huynh của '
+              'Trung tâm giáo dục DecaMath.',
               style: theme.textTheme.bodyMedium,
             ),
           ],

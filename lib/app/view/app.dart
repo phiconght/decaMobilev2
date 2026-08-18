@@ -108,7 +108,7 @@ class App extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
-          title: 'Trung tâm đào tạo',
+          title: 'Trung tâm giáo dục DecaMath',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,

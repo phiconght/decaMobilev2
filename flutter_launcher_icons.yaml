@@ -1,0 +1,22 @@
+flutter_launcher_icons:
+  android: true
+  # iOS asset catalog (ios/Runner/Assets.xcassets/AppIcon.appiconset) khong
+  # ton tai trong checkout Windows nay (iOS chi build duoc tren macOS/Xcode
+  # theo MOBILE_AI_GUIDE.md) — bat lai khi co may Mac de sinh icon iOS.
+  ios: false
+  image_path: "assets/images/logo_deca.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#F7F4EC"
+  # Ban rieng co dem an toan ~62% khung — tranh launcher Android bo
+  # tron/vuong-bo-goc cat mat logo (logo_deca.png thuong giu sat vien de
+  # dung linh hoat trong app, khong hop de lam adaptive icon truc tiep).
+  adaptive_icon_foreground: "assets/images/logo_deca_adaptive.png"
+  web:
+    generate: true
+    image_path: "assets/images/logo_deca.png"
+    background_color: "#F7F4EC"
+    theme_color: "#2E43E8"
+  windows:
+    generate: false
+  macos:
+    generate: false

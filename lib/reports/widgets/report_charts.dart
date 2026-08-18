@@ -1,17 +1,18 @@
+import 'package:deca_mobile/core/theme/app_colors.dart';
 import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-// Màu thống nhất — chủ đạo đỏ-trắng (Mobile_MauSac_DoTrang.md §4.6).
-const _correct = Color(0xFF1E8E3E);
-const _incorrect = Color(0xFF8C1D18);
-const _ungraded = Color(0xFFD8CCCB);
-const _coMat = Color(0xFF1E8E3E);
-const _tre = Color(0xFFB26A00);
-const _vang = Color(0xFF8C1D18);
-const _coPhep = Color(0xFF3A5A80);
-const _self = Color(0xFFBE2A3D); // mình = màu thương hiệu
-const _classAvg = Color(0xFFB98A2C); // TB lớp = vàng đồng
+// Màu thống nhất — chủ đạo cobalt/coral/gold/sage (KE_HOACH_TRIEN_KHAI.md §2).
+const _correct = AppColors.success;
+const _incorrect = AppColors.danger;
+const _ungraded = Color(0xFFDCD6C9);
+const _coMat = AppColors.success;
+const _tre = AppColors.warningDark;
+const _vang = AppColors.danger;
+const _coPhep = Color(0xFF6B5B95); // tím trầm — tách khỏi _self (thương hiệu)
+const _self = AppColors.brand; // mình = màu thương hiệu
+const _classAvg = AppColors.warningDark; // TB lớp = vàng đồng
 
 const difficultyLabel = {'EASY': 'Dễ', 'MEDIUM': 'TB', 'HARD': 'Khó'};
 const typeLabel = {
@@ -53,7 +54,7 @@ class ScoreDistributionChart extends StatelessWidget {
           BarChartRodData(
             toY: b.count.toDouble(),
             width: 16,
-            color: b.containsStudent ? _self : const Color(0xFFBFBFBF),
+            color: b.containsStudent ? _self : const Color(0xFFC9C2B4),
             borderRadius: BorderRadius.zero,
           ),
         ]),
@@ -161,8 +162,8 @@ class _SpectrumPainter extends CustomPainter {
 
   final ScoreDistribution d;
   static const _spectrum = Color(0xFFB45309);
-  static const _mine = Color(0xFFC8102E);
-  static const _axis = Color(0xFF8C8C8C);
+  static const _mine = AppColors.brand;
+  static const _axis = Color(0xFF9C948C);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -178,7 +179,7 @@ class _SpectrumPainter extends CustomPainter {
     double yOf(double s) => padT + (1 - s / maxScore) * plotH;
 
     final grid = Paint()
-      ..color = const Color(0xFFEFEFEF)
+      ..color = AppColors.lineSoft
       ..strokeWidth = 1;
     for (var s = 0; s <= maxScore.round(); s++) {
       final y = yOf(s.toDouble());

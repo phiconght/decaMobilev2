@@ -1,8 +1,10 @@
 import 'package:deca_mobile/core/theme/app_colors.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-/// Theme tap trung — Material 3, chu dao DO-TRANG (xem Mobile_MauSac_DoTrang.md).
+/// Theme tap trung — Material 3, chu dao COBALT tren nen GIAY AM.
+/// Xem ThietKe/Mobile/KE_HOACH_TRIEN_KHAI.md §2 cho bang token day du.
 ///
 /// KHONG dung fromSeed thuan (no khu bao hoa -> nhat): dung fromSeed lam nen
 /// roi copyWith de HAM cac slot theo bang mau da chot. Doi giao dien toan app
@@ -11,35 +13,41 @@ abstract final class AppTheme {
   static ThemeData get light => _build(Brightness.light);
   static ThemeData get dark => _build(Brightness.dark);
 
+  // Sac dam cho chu tren nen container nhat (tinh tay, khong co trong
+  // AppColors vi mock chi dinh nghia 1 sac coral — day la shade rieng cho
+  // rieng onErrorContainer de dat tuong phan AA).
+  static const _onDangerContainerLight = Color(0xFFB23A46);
+  static const _onWarningContainerLight = AppColors.warningDark;
+
   static ColorScheme _lightScheme() =>
       ColorScheme.fromSeed(seedColor: AppColors.brand).copyWith(
         brightness: Brightness.light,
-        primary: const Color(0xFFBE2A3D),
+        primary: AppColors.brand,
         onPrimary: Colors.white,
-        primaryContainer: const Color(0xFFFFE4E3),
-        onPrimaryContainer: const Color(0xFF6E1420),
-        secondary: const Color(0xFF8C5F5C),
+        primaryContainer: AppColors.brandTint,
+        onPrimaryContainer: AppColors.brandDark,
+        secondary: AppColors.inkSoft,
         onSecondary: Colors.white,
-        secondaryContainer: const Color(0xFFF6DDDB),
-        onSecondaryContainer: const Color(0xFF4C2B29),
-        tertiary: AppColors.gold,
+        secondaryContainer: AppColors.lineSoft,
+        onSecondaryContainer: AppColors.ink,
+        tertiary: AppColors.warningDark,
         onTertiary: Colors.white,
-        tertiaryContainer: const Color(0xFFF7E7C3),
-        onTertiaryContainer: const Color(0xFF4A3708),
+        tertiaryContainer: AppColors.warningTint,
+        onTertiaryContainer: _onWarningContainerLight,
         error: AppColors.danger,
         onError: Colors.white,
-        errorContainer: const Color(0xFFF9DEDC),
-        onErrorContainer: const Color(0xFF410E0B),
-        surface: const Color(0xFFFFFBFA),
-        onSurface: const Color(0xFF241A19),
-        onSurfaceVariant: const Color(0xFF5F4F4E),
+        errorContainer: AppColors.dangerTint,
+        onErrorContainer: _onDangerContainerLight,
+        surface: AppColors.paper,
+        onSurface: AppColors.ink,
+        onSurfaceVariant: AppColors.inkSoft,
         surfaceContainerLowest: Colors.white,
-        surfaceContainerLow: const Color(0xFFF9F1F0),
-        surfaceContainer: const Color(0xFFF7EEED),
-        surfaceContainerHigh: const Color(0xFFF5EAE9),
-        surfaceContainerHighest: const Color(0xFFF3E7E6),
-        outline: const Color(0xFF9C8B8A),
-        outlineVariant: const Color(0xFFE4D6D5),
+        surfaceContainerLow: AppColors.card,
+        surfaceContainer: AppColors.cardWarm,
+        surfaceContainerHigh: AppColors.lineSoft,
+        surfaceContainerHighest: AppColors.lineSoft,
+        outline: AppColors.line,
+        outlineVariant: AppColors.lineSoft,
       );
 
   static ColorScheme _darkScheme() =>
@@ -48,42 +56,63 @@ abstract final class AppTheme {
         brightness: Brightness.dark,
       ).copyWith(
         brightness: Brightness.dark,
-        primary: const Color(0xFFFFB3AE),
-        onPrimary: const Color(0xFF5F1210),
-        primaryContainer: const Color(0xFF8E0E23),
-        onPrimaryContainer: const Color(0xFFFFDAD9),
-        secondary: const Color(0xFFE0BBB8),
-        onSecondary: const Color(0xFF422B29),
-        secondaryContainer: const Color(0xFF5D403D),
-        onSecondaryContainer: const Color(0xFFFFDAD6),
-        tertiary: const Color(0xFFE3C077),
+        primary: const Color(0xFFB6C0FF),
+        onPrimary: const Color(0xFF152088),
+        primaryContainer: const Color(0xFF1E2FB8),
+        onPrimaryContainer: const Color(0xFFDCE1FF),
+        secondary: const Color(0xFFCBC4D6),
+        onSecondary: const Color(0xFF322E3C),
+        secondaryContainer: const Color(0xFF433F4E),
+        onSecondaryContainer: const Color(0xFFE6E1F0),
+        tertiary: const Color(0xFFF5C877),
         onTertiary: const Color(0xFF3E2E00),
-        tertiaryContainer: const Color(0xFF5A4419),
-        onTertiaryContainer: const Color(0xFFF7E7C3),
-        error: const Color(0xFFFFB4AB),
-        onError: const Color(0xFF690005),
-        errorContainer: const Color(0xFF8C1D18),
-        onErrorContainer: const Color(0xFFFFDAD6),
-        surface: const Color(0xFF1A1414),
-        onSurface: const Color(0xFFF1E0DE),
-        onSurfaceVariant: const Color(0xFFD3C0BE),
-        surfaceContainerLowest: const Color(0xFF150F0F),
-        surfaceContainerLow: const Color(0xFF241C1B),
-        surfaceContainer: const Color(0xFF281F1E),
-        surfaceContainerHigh: const Color(0xFF332827),
-        surfaceContainerHighest: const Color(0xFF3A2E2D),
-        outline: const Color(0xFFA08C8A),
-        outlineVariant: const Color(0xFF52443F),
+        tertiaryContainer: const Color(0xFF6B4E12),
+        onTertiaryContainer: const Color(0xFFFBF0DC),
+        error: const Color(0xFFFFB3B8),
+        onError: const Color(0xFF66000E),
+        errorContainer: const Color(0xFF8E2A34),
+        onErrorContainer: const Color(0xFFFFDADC),
+        surface: const Color(0xFF17151C),
+        onSurface: const Color(0xFFEAE7F0),
+        onSurfaceVariant: const Color(0xFFC8C3D2),
+        surfaceContainerLowest: const Color(0xFF100F14),
+        surfaceContainerLow: const Color(0xFF201E27),
+        surfaceContainer: const Color(0xFF25222C),
+        surfaceContainerHigh: const Color(0xFF2E2B36),
+        surfaceContainerHighest: const Color(0xFF393541),
+        outline: const Color(0xFF948F9E),
+        outlineVariant: const Color(0xFF454152),
       );
+
+  static TextTheme _textTheme(TextTheme base) {
+    final body = GoogleFonts.beVietnamProTextTheme(base);
+    final display = GoogleFonts.plusJakartaSansTextTheme(base);
+    return body.copyWith(
+      displayLarge: display.displayLarge?.copyWith(fontWeight: FontWeight.w800),
+      displayMedium:
+          display.displayMedium?.copyWith(fontWeight: FontWeight.w800),
+      displaySmall: display.displaySmall?.copyWith(fontWeight: FontWeight.w700),
+      headlineLarge:
+          display.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
+      headlineMedium:
+          display.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+      headlineSmall:
+          display.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+      titleLarge: display.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+      titleMedium: display.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+      titleSmall: display.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+    );
+  }
 
   static ThemeData _build(Brightness brightness) {
     final scheme =
         brightness == Brightness.dark ? _darkScheme() : _lightScheme();
     final base = ThemeData(useMaterial3: true, colorScheme: scheme);
-    final text = base.textTheme;
-    final outline = scheme.outlineVariant.withValues(alpha: 0.5);
+    final text = _textTheme(base.textTheme);
+    final outline = scheme.outlineVariant;
 
     return base.copyWith(
+      textTheme: text,
       scaffoldBackgroundColor: scheme.surface,
 
       appBarTheme: AppBarTheme(
@@ -94,7 +123,7 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         titleTextStyle: text.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
           color: scheme.onSurface,
         ),
       ),
@@ -118,23 +147,22 @@ abstract final class AppTheme {
           // Full-width do noi dat button quyet dinh (PrimaryButton/SizedBox).
           minimumSize: const Size(64, 50),
           shape: const RoundedRectangleBorder(borderRadius: AppRadii.rmd),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(64, 50),
           shape: const RoundedRectangleBorder(borderRadius: AppRadii.rmd),
-          // Vien do thuong hieu (thay outline xam cu).
           side: BorderSide(color: scheme.primary, width: 1.2),
           foregroundColor: scheme.primary,
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           shape: const RoundedRectangleBorder(borderRadius: AppRadii.rsm),
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ),
 
@@ -148,15 +176,13 @@ abstract final class AppTheme {
               states.contains(WidgetState.selected)
                   ? scheme.onPrimary
                   : scheme.onSurfaceVariant),
-          side: WidgetStatePropertyAll(
-            BorderSide(color: scheme.outlineVariant),
-          ),
+          side: WidgetStatePropertyAll(BorderSide(color: outline)),
         ),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: const OutlineInputBorder(
@@ -183,7 +209,7 @@ abstract final class AppTheme {
         backgroundColor: scheme.secondaryContainer,
         labelStyle: TextStyle(
           color: scheme.onSecondaryContainer,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           fontSize: 12,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -192,7 +218,7 @@ abstract final class AppTheme {
       dialogTheme: DialogThemeData(
         shape: const RoundedRectangleBorder(borderRadius: AppRadii.rxl),
         elevation: 1,
-        titleTextStyle: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        titleTextStyle: text.titleLarge?.copyWith(fontWeight: FontWeight.w800),
       ),
 
       bottomSheetTheme: const BottomSheetThemeData(
@@ -212,7 +238,6 @@ abstract final class AppTheme {
 
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,
-        // Indicator do nhat + icon/label chon mau do thuong hieu.
         indicatorColor: scheme.primaryContainer,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         height: 68,
@@ -231,7 +256,7 @@ abstract final class AppTheme {
                 ? scheme.primary
                 : scheme.onSurfaceVariant,
             fontWeight: states.contains(WidgetState.selected)
-                ? FontWeight.w600
+                ? FontWeight.w700
                 : FontWeight.w500,
           ),
         ),
@@ -249,5 +274,18 @@ abstract final class AppTheme {
         space: 1,
       ),
     );
+  }
+}
+
+/// Font mono (JetBrains Mono) cho so lieu/ngay/ma — M3 TextTheme khong co
+/// slot san cho monospace nen tach rieng thanh helper.
+abstract final class AppFonts {
+  static TextStyle mono(
+    BuildContext context, {
+    TextStyle? base,
+    FontWeight weight = FontWeight.w600,
+  }) {
+    final source = base ?? Theme.of(context).textTheme.bodyMedium!;
+    return GoogleFonts.jetBrainsMono(textStyle: source, fontWeight: weight);
   }
 }

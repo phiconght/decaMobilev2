@@ -133,8 +133,8 @@ class _GreetingHeader extends StatelessWidget {
     final dateStr = '${_weekday(now.weekday)}, '
         '${DateFormat('dd/MM/yyyy').format(now)}';
 
-    // Gradient do ruby (Mobile_MauSac_DoTrang.md §4.2). 2 vong tron trang mo
-    // goc phai tao chieu sau, khong lam roi.
+    // Gradient cobalt (KE_HOACH_TRIEN_KHAI.md §2, theo m-hero). 2 vong tron
+    // trang mo goc phai tao chieu sau, khong lam roi.
     const white90 = Color(0xE6FFFFFF);
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
@@ -146,7 +146,7 @@ class _GreetingHeader extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFC84151), Color(0xFF8A1C29)],
+            colors: [Color(0xFF1E2FB8), Color(0xFF2E43E8), Color(0xFF4C5EFF)],
           ),
         ),
         child: Stack(
@@ -180,7 +180,7 @@ class _GreetingHeader extends StatelessWidget {
                       ),
                       const SizedBox(width: AppSpacing.xs),
                       Text(
-                        'Trung tâm đào tạo',
+                        'Trung tâm giáo dục DecaMath',
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: white90,
                           fontWeight: FontWeight.w600,

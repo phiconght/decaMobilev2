@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "deca_mobile_web",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "-d", "chrome", "--target", "lib/main_development.dart", "--web-port", "7357"],
+      "port": 7357
+    }
+  ]
+}

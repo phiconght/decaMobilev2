@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
 import 'package:deca_mobile/core/network/api_exception.dart';
 import 'package:deca_mobile/core/state/data_state.dart';
+import 'package:deca_mobile/core/theme/app_colors.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/core/widgets/app_snackbar.dart';
 import 'package:deca_mobile/core/widgets/async_list_view.dart';
@@ -152,8 +153,8 @@ class _LeaveCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: item.parentConfirmedBy != null
-                    ? Colors.green
-                    : Colors.grey,
+                    ? AppColors.success
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             if (canConfirmParent &&

@@ -60,17 +60,17 @@ android {
         create("production") {
             dimension = "default"
             applicationIdSuffix = ""
-            manifestPlaceholders["appName"] = "Deca Mobile"
+            manifestPlaceholders["appName"] = "DecaMath"
         }
         create("staging") {
             dimension = "default"
             applicationIdSuffix = ".stg"
-            manifestPlaceholders["appName"] = "[STG] Deca Mobile"
+            manifestPlaceholders["appName"] = "[STG] DecaMath"
         }
         create("development") {
             dimension = "default"
             applicationIdSuffix = ".dev"
-            manifestPlaceholders["appName"] = "[DEV] Deca Mobile"
+            manifestPlaceholders["appName"] = "[DEV] DecaMath"
         }
     }
 
