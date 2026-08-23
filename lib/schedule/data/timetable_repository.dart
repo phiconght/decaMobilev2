@@ -16,6 +16,9 @@ abstract class TimetableRepository {
 
   /// Check-out buoi [sessionId] bang [token] QR.
   Future<void> checkout(int sessionId, String token);
+
+  /// Diem danh tu bam nut cho buoi hoc ONLINE (khong can QR).
+  Future<void> selfCheckin(int sessionId);
 }
 
 /// Trien khai [TimetableRepository] qua [ApiClient].
@@ -60,5 +63,10 @@ class TimetableRepositoryImpl implements TimetableRepository {
       '/api/v1/sessions/$sessionId/checkout',
       body: {'token': token},
     );
+  }
+
+  @override
+  Future<void> selfCheckin(int sessionId) async {
+    await _api.post('/api/v1/sessions/$sessionId/self-checkin');
   }
 }

@@ -21,22 +21,29 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// STUDENT → đợt thu của mình; PARENT → gộp đợt thu của TẤT CẢ các con
 /// (không còn chọn từng con — yêu cầu người dùng 11/08/2026), lấy danh sách
 /// con qua /reports/my-children.
+/// [embedded]: true khi nhúng trong tab của "Tài khoản và học phí"
+/// (bỏ Scaffold/AppBar riêng).
 class FeePage extends StatelessWidget {
-  const FeePage({super.key});
+  const FeePage({this.embedded = false, super.key});
+
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
     final roles =
         context.read<AuthCubit>().state.user?.roles ?? const <String>[];
 
+    final body = roles.contains('PARENT')
+        ? _ParentFee(
+            reports: context.read<ReportsRepository>(),
+            fee: context.read<FeeRepository>(),
+          )
+        : const _StudentFee(studentId: null);
+
+    if (embedded) return body;
     return Scaffold(
       appBar: AppBar(title: const Text('Học phí')),
-      body: roles.contains('PARENT')
-          ? _ParentFee(
-              reports: context.read<ReportsRepository>(),
-              fee: context.read<FeeRepository>(),
-            )
-          : _StudentFee(studentId: null),
+      body: body,
     );
   }
 }

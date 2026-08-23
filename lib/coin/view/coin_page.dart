@@ -4,13 +4,21 @@ import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
 import 'package:deca_mobile/coin/cubit/coin_cubit.dart';
 import 'package:deca_mobile/coin/data/coin_repository.dart';
 import 'package:deca_mobile/coin/data/models/coin.dart';
+import 'package:deca_mobile/coin/data/models/coin_topup.dart';
 import 'package:deca_mobile/coin/widgets/coin_transaction_tile.dart';
+import 'package:deca_mobile/coin/widgets/topup_amount_sheet.dart';
+import 'package:deca_mobile/core/network/api_exception.dart';
 import 'package:deca_mobile/core/state/data_state.dart';
 import 'package:deca_mobile/core/theme/app_colors.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
+import 'package:deca_mobile/core/widgets/app_bottom_sheet.dart';
 import 'package:deca_mobile/core/widgets/app_empty_view.dart';
 import 'package:deca_mobile/core/widgets/app_error_view.dart';
 import 'package:deca_mobile/core/widgets/app_loading_view.dart';
+import 'package:deca_mobile/core/widgets/app_snackbar.dart';
+import 'package:deca_mobile/core/widgets/primary_button.dart';
+import 'package:deca_mobile/fee/data/models/invoice.dart';
+import 'package:deca_mobile/fee/widgets/payment_qr_sheet.dart';
 import 'package:deca_mobile/reports/data/models/report_models.dart';
 import 'package:deca_mobile/reports/data/reports_repository.dart';
 import 'package:flutter/material.dart';
@@ -19,19 +27,26 @@ import 'package:intl/intl.dart';
 
 /// Màn "Xu của tôi" — điều hướng theo vai trò:
 /// STUDENT → Xu của mình; PARENT → chọn con (qua /reports/my-children).
+/// [embedded]: true khi nhúng trong tab của "Tài khoản và học phí"
+/// (bỏ Scaffold/AppBar riêng).
 class CoinPage extends StatelessWidget {
-  const CoinPage({super.key});
+  const CoinPage({this.embedded = false, super.key});
+
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
     final roles =
         context.read<AuthCubit>().state.user?.roles ?? const <String>[];
 
+    final body = roles.contains('PARENT')
+        ? _ParentCoin(reports: context.read<ReportsRepository>())
+        : const _StudentCoin(studentId: null);
+
+    if (embedded) return body;
     return Scaffold(
       appBar: AppBar(title: const Text('Xu của tôi')),
-      body: roles.contains('PARENT')
-          ? _ParentCoin(reports: context.read<ReportsRepository>())
-          : const _StudentCoin(studentId: null),
+      body: body,
     );
   }
 }
@@ -192,8 +207,8 @@ class _CoinBodyState extends State<_CoinBody> {
         }
 
         final txns = data.transactions;
-        // Card số dư + tiêu đề "Lịch sử" + (list HOẶC empty).
-        final rowCount = 2 + (txns.isEmpty ? 1 : txns.length);
+        // Card số dư + khối nạp Xu + tiêu đề "Lịch sử" + (list HOẶC empty).
+        final rowCount = 3 + (txns.isEmpty ? 1 : txns.length);
         return RefreshIndicator(
           onRefresh: context.read<CoinCubit>().refresh,
           child: ListView.separated(
@@ -208,10 +223,13 @@ class _CoinBodyState extends State<_CoinBody> {
                 return _BalanceCard(balance: data.balance);
               }
               if (i == 1) {
+                return const _TopupSection();
+              }
+              if (i == 2) {
                 return Padding(
                   padding: const EdgeInsets.only(top: AppSpacing.xs),
                   child: Text(
-                    'Lịch sử',
+                    'Lịch sử biến động Xu',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 );
@@ -225,7 +243,7 @@ class _CoinBodyState extends State<_CoinBody> {
                   ),
                 );
               }
-              final idx = i - 2;
+              final idx = i - 3;
               final tile = CoinTransactionTile(transaction: txns[idx]);
               // Loader ở cuối khi còn trang.
               if (idx == txns.length - 1 && data.loadingMore) {
@@ -292,6 +310,113 @@ class _BalanceCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Nút "Nạp Xu" + danh sách yêu cầu nạp đang chờ đối soát (PENDING).
+class _TopupSection extends StatefulWidget {
+  const _TopupSection();
+
+  @override
+  State<_TopupSection> createState() => _TopupSectionState();
+}
+
+class _TopupSectionState extends State<_TopupSection> {
+  late Future<List<CoinTopup>> _future;
+  static final _money = NumberFormat.decimalPattern('vi_VN');
+
+  @override
+  void initState() {
+    super.initState();
+    _future = context.read<CoinRepository>().fetchTopups();
+  }
+
+  void _refresh() {
+    setState(() => _future = context.read<CoinRepository>().fetchTopups());
+  }
+
+  Future<void> _openTopup(BuildContext context) async {
+    final amount = await AppBottomSheet.show<int>(
+      context,
+      child: const TopupAmountSheet(),
+    );
+    if (amount == null || !context.mounted) return;
+    try {
+      final topup = await context.read<CoinRepository>().createTopup(amount);
+      if (!context.mounted) return;
+      _refresh();
+      await _showQr(context, topup);
+    } on ApiException catch (e) {
+      if (context.mounted) AppSnackBar.error(context, e.message);
+    }
+  }
+
+  Future<void> _showQr(BuildContext context, CoinTopup topup) async {
+    if (topup.qrPayload == null) return;
+    await AppBottomSheet.show<void>(
+      context,
+      child: PaymentQrSheet(
+        qr: InvoiceQr(
+          qrPayload: topup.qrPayload!,
+          bankName: topup.bankName ?? '',
+          accountNumber: topup.accountNumber ?? '',
+          accountName: topup.accountName ?? '',
+          amount: topup.amountVnd,
+          paymentCode: topup.paymentCode,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PrimaryButton(
+          label: 'Nạp Xu bằng chuyển khoản',
+          icon: Icons.qr_code_2,
+          onPressed: () => _openTopup(context),
+        ),
+        FutureBuilder<List<CoinTopup>>(
+          future: _future,
+          builder: (context, snap) {
+            final pending =
+                (snap.data ?? const <CoinTopup>[]).where((t) => t.isPending).toList();
+            if (pending.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Yêu cầu nạp Xu đang chờ đối soát',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  for (final t in pending)
+                    Card(
+                      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                      child: ListTile(
+                        leading: const Icon(Icons.hourglass_top, color: AppColors.warning),
+                        title: Text('${_money.format(t.amountVnd)} đ · ${_money.format(t.coinAmount)} Xu'),
+                        subtitle: Text('Mã CK: ${t.paymentCode}'),
+                        trailing: TextButton(
+                          onPressed: () => _showQr(context, t),
+                          child: const Text('Xem QR'),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

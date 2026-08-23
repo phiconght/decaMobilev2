@@ -1,10 +1,8 @@
+import 'package:deca_mobile/account/view/account_fee_page.dart';
 import 'package:deca_mobile/catalog/view/catalog_page.dart';
-import 'package:deca_mobile/coin/view/coin_page.dart';
 import 'package:deca_mobile/core/theme/app_colors.dart';
 import 'package:deca_mobile/core/widgets/quick_action.dart';
-import 'package:deca_mobile/fee/view/fee_page.dart';
 import 'package:deca_mobile/home/view/home_shell.dart';
-import 'package:deca_mobile/payment/view/payment_page.dart';
 import 'package:flutter/material.dart';
 
 /// Danh sach tien ich hien thi trong QuickActionStrip tren Trang chu.
@@ -23,27 +21,12 @@ const List<QuickAction> homeQuickActions = [
     tint: AppColors.brand,
   ),
   QuickAction(
-    id: 'payment',
-    label: 'Thanh\ntoán',
-    icon: Icons.payments_outlined,
-    builder: _buildPayment,
-    tint: AppColors.warningDark,
-  ),
-  QuickAction(
-    id: 'fee',
-    label: 'Học\nphí',
+    id: 'account_fee',
+    label: 'Tài khoản\nvà học phí',
     icon: Icons.account_balance_wallet_outlined,
-    builder: _buildFee,
+    builder: _buildAccountFee,
     roles: ['STUDENT', 'PARENT'],
     tint: AppColors.success,
-  ),
-  QuickAction(
-    id: 'coin',
-    label: 'Xu của\ntôi',
-    icon: Icons.savings_outlined,
-    builder: _buildCoin,
-    roles: ['STUDENT', 'PARENT'],
-    tint: AppColors.warningDark,
   ),
   QuickAction(
     id: 'attendance',
@@ -60,8 +43,6 @@ List<QuickAction> quickActionsFor(List<String> roles) =>
     homeQuickActions.where((a) => a.visibleFor(roles)).toList();
 
 Widget _buildCatalog(BuildContext context) => const CatalogPage();
-Widget _buildPayment(BuildContext context) => const PaymentPage();
-Widget _buildFee(BuildContext context) => const FeePage();
-Widget _buildCoin(BuildContext context) => const CoinPage();
+Widget _buildAccountFee(BuildContext context) => const AccountFeePage();
 void _goToTimetable(BuildContext context) =>
     HomeShellScope.of(context).switchTab(1);

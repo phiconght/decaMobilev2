@@ -50,6 +50,7 @@ class TimetableItem {
     this.attendanceStatus,
     this.onLeave = false,
     this.teacherAttendanceStatus,
+    this.deliveryMode,
   });
 
   factory TimetableItem.fromJson(Map<String, dynamic> json) {
@@ -74,6 +75,7 @@ class TimetableItem {
           attendanceStatusFromString(json['attendanceStatus'] as String?),
       onLeave: (json['onLeave'] as bool?) ?? false,
       teacherAttendanceStatus: json['teacherAttendanceStatus'] as String?,
+      deliveryMode: json['deliveryMode'] as String?,
     );
   }
 
@@ -98,6 +100,11 @@ class TimetableItem {
 
   /// Trang thai cham cong GV (view TEACHER): 'DUNG_GIO'|'VAO_TRE'|'VANG', null neu chua cham.
   final String? teacherAttendanceStatus;
+
+  /// 'ONLINE' = HS tu bam nut Diem danh; 'OFFLINE'|null = QR xoay vong / GV diem danh.
+  final String? deliveryMode;
+
+  bool get isOnlineClass => deliveryMode == 'ONLINE';
 
   /// 'mon khoi' (vd 'Toan 10') hoac fallback ten lop.
   String get title {

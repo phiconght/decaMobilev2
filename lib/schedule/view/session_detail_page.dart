@@ -125,6 +125,20 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
     }
   }
 
+  /// HV tu bam nut diem danh cho buoi hoc ONLINE (khong can quet QR).
+  Future<void> _selfCheckin(BuildContext context) async {
+    try {
+      final repo = context.read<TimetableRepository>();
+      await repo.selfCheckin(item.sessionId);
+      if (!context.mounted) return;
+      AppSnackBar.success(context, 'Đã điểm danh');
+      unawaited(context.read<TimetableCubit>().refresh());
+      Navigator.pop(context);
+    } on ApiException catch (e) {
+      if (context.mounted) AppSnackBar.error(context, e.message);
+    }
+  }
+
   /// GV quet QR phong de cham cong day. Chi chap nhan QR phong (DECA-ROOM).
   Future<void> _scanTeacher(
     BuildContext context, {
@@ -424,16 +438,23 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
         (attendance == null || attendance == AttendanceStatus.chuaCheckin);
     if (canCheckin) {
       actions.add(
-        PrimaryButton(
-          label: 'Check-in',
-          icon: Icons.qr_code,
-          onPressed: () => _scanAndDo(context, isCheckout: false),
-        ),
+        item.isOnlineClass
+            ? PrimaryButton(
+                label: 'Điểm danh',
+                icon: Icons.how_to_reg,
+                onPressed: () => _selfCheckin(context),
+              )
+            : PrimaryButton(
+                label: 'Check-in',
+                icon: Icons.qr_code,
+                onPressed: () => _scanAndDo(context, isCheckout: false),
+              ),
       );
     }
 
     final canCheckout = !isCancelled &&
         today &&
+        !item.isOnlineClass &&
         (attendance == AttendanceStatus.coMat ||
             attendance == AttendanceStatus.tre);
     if (canCheckout) {

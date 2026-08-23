@@ -14,6 +14,7 @@ import 'package:deca_mobile/exams/data/exam_taking_repository.dart';
 import 'package:deca_mobile/exams/data/exams_repository.dart';
 import 'package:deca_mobile/fee/data/fee_repository.dart';
 import 'package:deca_mobile/home/cubit/inbox_badge_cubit.dart';
+import 'package:deca_mobile/home/data/marketing_repository.dart';
 import 'package:deca_mobile/home/view/home_shell.dart';
 import 'package:deca_mobile/l10n/l10n.dart';
 import 'package:deca_mobile/messages/data/messages_repository.dart';
@@ -87,6 +88,9 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<CoinRepository>(
           create: (_) => CoinRepositoryImpl(apiClient),
+        ),
+        RepositoryProvider<MarketingRepository>(
+          create: (_) => MarketingRepositoryImpl(apiClient),
         ),
       ],
       child: MultiBlocProvider(

@@ -8,6 +8,7 @@ import 'package:deca_mobile/home/cubit/home_announcements_cubit.dart';
 import 'package:deca_mobile/home/cubit/home_today_cubit.dart';
 import 'package:deca_mobile/home/data/quick_actions.dart';
 import 'package:deca_mobile/home/view/widgets/announcement_banner.dart';
+import 'package:deca_mobile/home/view/widgets/marketing_section.dart';
 import 'package:deca_mobile/home/view/widgets/post_feed_section.dart';
 import 'package:deca_mobile/home/view/widgets/today_session_card.dart';
 import 'package:deca_mobile/messages/data/messages_repository.dart';
@@ -102,6 +103,7 @@ class _HomeBody extends StatelessWidget {
           const AnnouncementBanner(),
           const TodaySessionCard(),
           const PostFeedSection(),
+          const MarketingSection(),
           const SizedBox(height: AppSpacing.xl),
         ],
       ),
