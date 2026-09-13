@@ -6,8 +6,9 @@ import 'package:flutter/material.dart';
 /// Mau ngu nghia co dinh, KHONG sinh tu seed — de nhat quan trang thai
 /// (dat/chua dat, dang hoc/ket thuc...) tren ca light & dark.
 abstract final class AppColors {
-  // Nen giay am + card.
-  static const paper = Color(0xFFF7F4EC);
+  // Nen giay am + card. Sang hon ban goc 0xFFF7F4EC (phan hoi nguoi dung
+  // 13/09/2026: nen qua toi) — khop voi WEB/theme/tokens.ts `paper`.
+  static const paper = Color(0xFFFAFAF5);
   static const card = Color(0xFFFFFFFF);
   static const cardWarm = Color(0xFFFFFDF8);
 

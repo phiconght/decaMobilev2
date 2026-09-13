@@ -5,9 +5,12 @@ import 'package:deca_mobile/auth/data/auth_repository.dart';
 import 'package:deca_mobile/core/theme/app_spacing.dart';
 import 'package:deca_mobile/core/widgets/quick_action_strip.dart';
 import 'package:deca_mobile/home/cubit/home_announcements_cubit.dart';
+import 'package:deca_mobile/home/cubit/home_hero_cubit.dart';
 import 'package:deca_mobile/home/cubit/home_today_cubit.dart';
+import 'package:deca_mobile/home/data/marketing_repository.dart';
 import 'package:deca_mobile/home/data/quick_actions.dart';
 import 'package:deca_mobile/home/view/widgets/announcement_banner.dart';
+import 'package:deca_mobile/home/view/widgets/hero_banner.dart';
 import 'package:deca_mobile/home/view/widgets/marketing_section.dart';
 import 'package:deca_mobile/home/view/widgets/post_feed_section.dart';
 import 'package:deca_mobile/home/view/widgets/today_session_card.dart';
@@ -20,7 +23,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 /// Tab Trang chu: loi chao + quick actions + thong bao trung tam + buoi hoc hom
-/// nay + bang tin. Cung cap 3 cubit rieng cho cac section dong.
+/// nay + bang tin. Cung cap 4 cubit rieng cho cac section dong (+ Hero doc
+/// tu API cau hinh thay vi hard-code — dong bo voi WEB).
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -53,6 +57,13 @@ class HomePage extends StatelessWidget {
         BlocProvider(
           create: (ctx) {
             final cubit = PostsCubit(ctx.read<PostsRepository>(), pageSize: 5);
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+        BlocProvider(
+          create: (ctx) {
+            final cubit = HomeHeroCubit(ctx.read<MarketingRepository>());
             unawaited(cubit.load());
             return cubit;
           },
@@ -96,6 +107,7 @@ class _HomeBody extends StatelessWidget {
         children: [
           _GreetingHeader(firstName: firstName),
           const SizedBox(height: AppSpacing.lg),
+          const HeroBanner(),
           QuickActionStrip(
             actions: quickActionsFor(user?.roles ?? const <String>[]),
           ),

@@ -101,19 +101,45 @@ class Testimonial {
       );
 }
 
+/// Noi dung khoi Hero (badge/tieu de/CTA) — cau hinh qua man "Nội Dung" cua
+/// ADMIN, dung chung voi khoi Hero cong khai cua WEB. `null` neu chua cau
+/// hinh hoac dang tat (`visible = false`, BE khong tra field nay).
+class HomeHero {
+  const HomeHero({
+    required this.badgeText,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String? badgeText;
+  final String title;
+  final String? subtitle;
+
+  factory HomeHero.fromJson(Map<String, dynamic> j) => HomeHero(
+        badgeText: j['badgeText'] as String?,
+        title: j['title'] as String,
+        subtitle: j['subtitle'] as String?,
+      );
+}
+
 /// Payload day du 1 lan goi cho khoi marketing Trang chu.
 class HomeMarketing {
   const HomeMarketing({
+    required this.hero,
     required this.categories,
     required this.trustStats,
     required this.testimonials,
   });
 
+  final HomeHero? hero;
   final List<MarketingCategory> categories;
   final TrustStats trustStats;
   final List<Testimonial> testimonials;
 
   factory HomeMarketing.fromJson(Map<String, dynamic> j) => HomeMarketing(
+        hero: j['hero'] == null
+            ? null
+            : HomeHero.fromJson(j['hero'] as Map<String, dynamic>),
         categories: (j['categories'] as List<dynamic>)
             .map((e) => MarketingCategory.fromJson(e as Map<String, dynamic>))
             .toList(),

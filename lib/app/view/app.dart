@@ -116,6 +116,12 @@ class App extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
+          // Khoa LUON sang (khong theo dark mode he thong) — dong bo voi
+          // WEB/ADMIN (khong co dark theme, luon nen giay am sang). Truoc day
+          // thieu themeMode nen MaterialApp tu theo ThemeMode.system, khien
+          // may/thiet bi dang bat dark mode hien Mobile toi hon han 2 app kia
+          // (phan hoi nguoi dung 13/09/2026).
+          themeMode: ThemeMode.light,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: BlocBuilder<AuthCubit, AuthState>(
