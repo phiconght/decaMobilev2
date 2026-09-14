@@ -309,25 +309,44 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
     return !now.isBefore(windowStart) && !now.isAfter(end);
   }
 
+  /// Chu "chua co du lieu" cho 1 muc — thay vi an han (SizedBox.shrink) khien
+  /// trang nhin nhu trang tinh/loi, du day la trang thai binh thuong (GV
+  /// chua gan video/link Zoom/de thi cho buoi nay).
+  Widget _emptySectionText(String text) {
+    final theme = Theme.of(context);
+    return Text(
+      text,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
   Widget _buildZoomSection(BuildContext context) {
     return FutureBuilder<List<ZoomLinkItem>>(
       future: _zoomLinksFuture,
       builder: (context, snapshot) {
+        // Cho du lieu tai xong (co snapshot) roi moi ket luan "chua co" — tranh
+        // nhap nhay/an nham noi dung trong luc dang tai (§14/09/2026).
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox.shrink();
+        }
         final links = snapshot.data ?? const <ZoomLinkItem>[];
-        if (links.isEmpty) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: SectionCard(
             title: 'Link Zoom',
-            child: Column(
-              children: [
-                for (final link in links)
-                  ZoomLinkTile(
-                    link: link,
-                    isWithinSessionWindow: _isWithinSessionWindow,
+            child: links.isEmpty
+                ? _emptySectionText('Chưa có link Zoom.')
+                : Column(
+                    children: [
+                      for (final link in links)
+                        ZoomLinkTile(
+                          link: link,
+                          isWithinSessionWindow: _isWithinSessionWindow,
+                        ),
+                    ],
                   ),
-              ],
-            ),
           ),
         );
       },
@@ -338,17 +357,22 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
     return FutureBuilder<List<SessionVideoItem>>(
       future: _videosFuture,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox.shrink();
+        }
         final videos = snapshot.data ?? const <SessionVideoItem>[];
-        if (videos.isEmpty) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: SectionCard(
             title: 'Video bài giảng',
-            child: Column(
-              children: [
-                for (final video in videos) YoutubePlayerTile(video: video),
-              ],
-            ),
+            child: videos.isEmpty
+                ? _emptySectionText('Chưa có video bài giảng.')
+                : Column(
+                    children: [
+                      for (final video in videos)
+                        YoutubePlayerTile(video: video),
+                    ],
+                  ),
           ),
         );
       },
@@ -361,8 +385,19 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
     return FutureBuilder<List<SessionExamItem>>(
       future: _examsFuture,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox.shrink();
+        }
         final exams = snapshot.data ?? const <SessionExamItem>[];
-        if (exams.isEmpty) return const SizedBox.shrink();
+        if (exams.isEmpty) {
+          return Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _emptySectionText('Buổi học chưa có đề thi.'),
+            ),
+          );
+        }
         return Card(
           margin: EdgeInsets.zero,
           child: ExpansionTile(
@@ -432,9 +467,15 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
     final attendance = item.attendanceStatus;
     final actions = <Widget>[];
 
+    // Buoi chua dong (planned = chua toi gio, inProgress = dang hoc). Diem
+    // danh/xin nghi phai con dung duoc GIUA buoi — day moi la luc HV bam
+    // check-in nhieu nhat, nen KHONG duoc chi nhan planned.
+    final notClosed = item.status == SessionStatus.planned ||
+        item.status == SessionStatus.inProgress;
+
     final canCheckin = !isCancelled &&
         today &&
-        item.status == SessionStatus.planned &&
+        notClosed &&
         (attendance == null || attendance == AttendanceStatus.chuaCheckin);
     if (canCheckin) {
       actions.add(
@@ -467,8 +508,7 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
       );
     }
 
-    final canLeave =
-        !isCancelled && future && item.status == SessionStatus.planned;
+    final canLeave = !isCancelled && future && notClosed;
     if (canLeave) {
       if (actions.isNotEmpty) actions.add(const SizedBox(height: 12));
       actions.add(
@@ -503,10 +543,11 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
   }) {
     // studentId co the vang mat khi man nay duoc mo tu ngu canh khong biet
     // dang xem con nao (vd tab Khoa hoc) — khong du de dung form xin nghi.
-    if (isCancelled ||
-        item.status != SessionStatus.planned ||
-        !future ||
-        item.studentId == null) {
+    // Buoi dang dien ra (inProgress) VAN cho xin nghi: PH thuong bao nghi
+    // ngay sat/dau gio hoc, khoa lai la mat chuc nang so voi truoc.
+    final notClosed = item.status == SessionStatus.planned ||
+        item.status == SessionStatus.inProgress;
+    if (isCancelled || !notClosed || !future || item.studentId == null) {
       return const [];
     }
     return [

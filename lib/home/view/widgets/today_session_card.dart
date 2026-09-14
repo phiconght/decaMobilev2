@@ -206,6 +206,9 @@ class _SessionTile extends StatelessWidget {
     if (session.status == SessionStatus.done) {
       return ('Đã kết thúc', scheme.outline);
     }
+    if (session.status == SessionStatus.inProgress) {
+      return ('Đang diễn ra', scheme.primary);
+    }
     return ('Sắp diễn ra', scheme.primary);
   }
 }

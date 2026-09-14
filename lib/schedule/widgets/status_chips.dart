@@ -14,6 +14,7 @@ class SessionStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
       SessionStatus.planned => (null, null),
+      SessionStatus.inProgress => ('Đang diễn ra', AppColors.brand),
       SessionStatus.done => ('Đã dạy', AppColors.neutral),
       SessionStatus.cancelled => ('Đã hủy', AppColors.danger),
     };

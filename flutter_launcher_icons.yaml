@@ -6,7 +6,7 @@ flutter_launcher_icons:
   ios: false
   image_path: "assets/images/logo_deca.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#F7F4EC"
+  adaptive_icon_background: "#FAFAF5"
   # Ban rieng co dem an toan ~62% khung — tranh launcher Android bo
   # tron/vuong-bo-goc cat mat logo (logo_deca.png thuong giu sat vien de
   # dung linh hoat trong app, khong hop de lam adaptive icon truc tiep).
@@ -14,7 +14,7 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: "assets/images/logo_deca.png"
-    background_color: "#F7F4EC"
+    background_color: "#FAFAF5"
     theme_color: "#2E43E8"
   windows:
     generate: false

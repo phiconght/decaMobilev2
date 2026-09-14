@@ -1,10 +1,13 @@
-/// Trang thai buoi hoc (khop SessionStatus BE).
-enum SessionStatus { planned, cancelled, done }
+/// Trang thai buoi hoc (khop SessionStatus BE). BE co SessionStateJob quet
+/// moi phut, tu chuyen planned -> inProgress (den gio bat dau) -> done (qua
+/// gio ket thuc); client CHI doc status, KHONG tu tinh gio.
+enum SessionStatus { planned, inProgress, cancelled, done }
 
 /// Trang thai diem danh cua HV trong 1 buoi (khop AttendanceStatus BE).
 enum AttendanceStatus { chuaCheckin, coMat, tre, vang, coPhep }
 
 SessionStatus sessionStatusFromString(String? s) => switch (s) {
+      'IN_PROGRESS' => SessionStatus.inProgress,
       'CANCELLED' => SessionStatus.cancelled,
       'DONE' => SessionStatus.done,
       _ => SessionStatus.planned,

@@ -1,12 +1,15 @@
 import 'package:deca_mobile/exams/data/models/exam.dart';
 import 'package:equatable/equatable.dart';
 
-/// Trang thai buoi hoc — DUNG 3 gia tri, khop `SessionStatus` cua BE.
-/// KHONG co `inProgress`: "buoi dang dien ra" duoc suy o client tu ngay,
-/// khong phai trang thai trong DB (xem SPEC_KhoaHoc_NoiDung_Mobile §2.2).
-enum OutlineSessionStatus { planned, done, cancelled }
+/// Trang thai buoi hoc — khop cot `status` trong DB cua BE. BE co job
+/// SessionStateJob quet moi phut, tu chuyen PLANNED -> IN_PROGRESS (den gio
+/// bat dau) -> DONE (qua gio ket thuc) theo gio server. Client CHI so sanh
+/// status nay, KHONG tu tinh gio (SPEC bug 14/09/2026, sua tiep tu
+/// SPEC_KhoaHoc_NoiDung_Mobile §2.2).
+enum OutlineSessionStatus { planned, inProgress, done, cancelled }
 
 OutlineSessionStatus _statusFrom(String? s) => switch (s) {
+      'IN_PROGRESS' => OutlineSessionStatus.inProgress,
       'DONE' => OutlineSessionStatus.done,
       'CANCELLED' => OutlineSessionStatus.cancelled,
       _ => OutlineSessionStatus.planned,
@@ -69,7 +72,10 @@ class ClassOutline extends Equatable {
     OutlineSession? best;
     for (final g in groups) {
       for (final s in g.sessions) {
-        if (s.status != OutlineSessionStatus.planned) continue;
+        if (s.status != OutlineSessionStatus.planned &&
+            s.status != OutlineSessionStatus.inProgress) {
+          continue;
+        }
         if (s.date.isBefore(today)) continue;
         if (best == null || s.date.isBefore(best.date)) best = s;
       }
@@ -228,13 +234,15 @@ class OutlineSession extends Equatable {
   /// buoi hoc thay vi don rieng cuoi nhom chuyen de.
   final List<OutlineExam> exams;
 
-  /// CHI buoi DONE moi duoc hien huy hieu diem danh.
+  /// Buoi DONE hoac dang IN_PROGRESS moi duoc hien huy hieu diem danh.
   ///
   /// KHONG duoc dua vao `attendanceStatus == null` de an: BE tra
   /// `CHUA_CHECKIN` (khac null) cho ca buoi CHUA dien ra, nen loc theo null
   /// se hien "chua diem danh" cho buoi tuong lai. Xem SPEC §2.3.
   bool get showsAttendance =>
-      status == OutlineSessionStatus.done && attendanceStatus != null;
+      (status == OutlineSessionStatus.done ||
+          status == OutlineSessionStatus.inProgress) &&
+      attendanceStatus != null;
 
   @override
   List<Object?> get props => [sessionId, date, status, attendanceStatus];

@@ -3,7 +3,7 @@
     "short_name": "DecaMath",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#F7F4EC",
+    "background_color": "#FAFAF5",
     "theme_color": "#2E43E8",
     "description": "Ứng dụng học tập dành cho học sinh và phụ huynh của Trung tâm giáo dục DecaMath.",
     "orientation": "portrait-primary",

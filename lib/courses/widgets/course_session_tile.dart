@@ -45,6 +45,8 @@ class CourseSessionTile extends StatelessWidget {
     final muted = theme.colorScheme.onSurfaceVariant;
     final cancelled = session.status == OutlineSessionStatus.cancelled;
     final planned = session.status == OutlineSessionStatus.planned;
+    final inProgress = session.status == OutlineSessionStatus.inProgress;
+    final done = session.status == OutlineSessionStatus.done;
 
     final title = session.title;
     final hasTitle = title != null && title.isNotEmpty;
@@ -65,8 +67,10 @@ class CourseSessionTile extends StatelessWidget {
         session.roomName!,
     ].join(' · ');
 
-    // Buoi chua dien ra / da huy -> chu mo. Giu opacity du cao de con dat
-    // tuong phan WCAG AA (§2.5-2): 0.7 thay vi 0.4-0.5 nhu thuong thay.
+    // Buoi chua dien ra (PLANNED, chua den gio) / da huy -> chu mo. Giu
+    // opacity du cao de con dat tuong phan WCAG AA (§2.5-2): 0.7 thay vi
+    // 0.4-0.5 nhu thuong thay. status do BE quan ly (SessionStateJob quet
+    // moi phut) — KHONG tu tinh gio o client (SPEC bug 14/09/2026).
     final dim = cancelled || planned;
 
     final content = Padding(
@@ -137,6 +141,11 @@ class CourseSessionTile extends StatelessWidget {
                   _Pill(
                     label: 'Sắp diễn ra',
                     color: theme.colorScheme.onSurfaceVariant,
+                  )
+                else if (inProgress)
+                  _Pill(
+                    label: 'Đang diễn ra',
+                    color: theme.colorScheme.primary,
                   ),
                 // CHI buoi DONE moi hien diem danh: BE tra CHUA_CHECKIN (khac
                 // null) cho ca buoi tuong lai, loc theo null se sai (§2.3).
@@ -165,9 +174,10 @@ class CourseSessionTile extends StatelessWidget {
       ),
     );
 
-    // Buoi CHUA dien ra (PLANNED — "chua phat hanh") hoac DA HUY thi khong
-    // cho bam vao xem chi tiet — chi buoi DONE (da hoc) moi mo duoc.
-    final canOpen = session.status == OutlineSessionStatus.done;
+    // Buoi PLANNED (chua den gio) hoac DA HUY thi khong cho bam vao xem chi
+    // tiet. Buoi DONE hoac IN_PROGRESS (BE tu tinh, xem OutlineSessionStatus)
+    // deu mo duoc.
+    final canOpen = done || inProgress;
 
     return Semantics(
       // Gop thanh 1 nhan de screen reader doc lien mach thay vi doc roi tung
@@ -200,6 +210,7 @@ class CourseSessionTile extends StatelessWidget {
 
   bool get _hasTrailing =>
       session.status == OutlineSessionStatus.planned ||
+      session.status == OutlineSessionStatus.inProgress ||
       session.showsAttendance ||
       session.materialCount > 0;
 
@@ -210,6 +221,11 @@ class CourseSessionTile extends StatelessWidget {
         parts.add('Đã hủy');
       case OutlineSessionStatus.planned:
         parts.add('Sắp diễn ra');
+      case OutlineSessionStatus.inProgress:
+        parts.add('Đang diễn ra');
+        if (session.showsAttendance) {
+          parts.add(_attendanceText(session.attendanceStatus, session.onLeave));
+        }
       case OutlineSessionStatus.done:
         if (session.showsAttendance) {
           parts.add(_attendanceText(session.attendanceStatus, session.onLeave));

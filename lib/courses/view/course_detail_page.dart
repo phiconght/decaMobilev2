@@ -170,6 +170,7 @@ class _OutlineListState extends State<_OutlineList> {
     final status = switch (s.status) {
       OutlineSessionStatus.done => timetable.SessionStatus.done,
       OutlineSessionStatus.cancelled => timetable.SessionStatus.cancelled,
+      OutlineSessionStatus.inProgress => timetable.SessionStatus.inProgress,
       OutlineSessionStatus.planned => timetable.SessionStatus.planned,
     };
 
