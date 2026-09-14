@@ -309,19 +309,6 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
     return !now.isBefore(windowStart) && !now.isAfter(end);
   }
 
-  /// Chu "chua co du lieu" cho 1 muc — thay vi an han (SizedBox.shrink) khien
-  /// trang nhin nhu trang tinh/loi, du day la trang thai binh thuong (GV
-  /// chua gan video/link Zoom/de thi cho buoi nay).
-  Widget _emptySectionText(String text) {
-    final theme = Theme.of(context);
-    return Text(
-      text,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
-    );
-  }
-
   Widget _buildZoomSection(BuildContext context) {
     return FutureBuilder<List<ZoomLinkItem>>(
       future: _zoomLinksFuture,
@@ -332,21 +319,22 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
           return const SizedBox.shrink();
         }
         final links = snapshot.data ?? const <ZoomLinkItem>[];
+        // An han khi khong co du lieu — khong hien khung rong (phan hoi
+        // 14/09/2026: co thi hien, khong co thi an han, dong bo voi Web).
+        if (links.isEmpty) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: SectionCard(
             title: 'Link Zoom',
-            child: links.isEmpty
-                ? _emptySectionText('Chưa có link Zoom.')
-                : Column(
-                    children: [
-                      for (final link in links)
-                        ZoomLinkTile(
-                          link: link,
-                          isWithinSessionWindow: _isWithinSessionWindow,
-                        ),
-                    ],
+            child: Column(
+              children: [
+                for (final link in links)
+                  ZoomLinkTile(
+                    link: link,
+                    isWithinSessionWindow: _isWithinSessionWindow,
                   ),
+              ],
+            ),
           ),
         );
       },
@@ -361,18 +349,16 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
           return const SizedBox.shrink();
         }
         final videos = snapshot.data ?? const <SessionVideoItem>[];
+        if (videos.isEmpty) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: SectionCard(
             title: 'Video bài giảng',
-            child: videos.isEmpty
-                ? _emptySectionText('Chưa có video bài giảng.')
-                : Column(
-                    children: [
-                      for (final video in videos)
-                        YoutubePlayerTile(video: video),
-                    ],
-                  ),
+            child: Column(
+              children: [
+                for (final video in videos) YoutubePlayerTile(video: video),
+              ],
+            ),
           ),
         );
       },
@@ -389,15 +375,7 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
           return const SizedBox.shrink();
         }
         final exams = snapshot.data ?? const <SessionExamItem>[];
-        if (exams.isEmpty) {
-          return Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: _emptySectionText('Buổi học chưa có đề thi.'),
-            ),
-          );
-        }
+        if (exams.isEmpty) return const SizedBox.shrink();
         return Card(
           margin: EdgeInsets.zero,
           child: ExpansionTile(
