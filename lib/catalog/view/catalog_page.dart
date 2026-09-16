@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:deca_mobile/auth/cubit/auth_cubit.dart';
 import 'package:deca_mobile/catalog/cubit/catalog_cubit.dart';
 import 'package:deca_mobile/catalog/data/catalog_repository.dart';
+import 'package:deca_mobile/catalog/view/course_detail_page.dart';
 import 'package:deca_mobile/coin/data/coin_repository.dart';
 import 'package:deca_mobile/core/network/api_exception.dart';
 import 'package:deca_mobile/core/state/data_state.dart';
@@ -14,18 +15,21 @@ import 'package:deca_mobile/core/widgets/app_error_view.dart';
 import 'package:deca_mobile/core/widgets/app_loading_view.dart';
 import 'package:deca_mobile/core/widgets/app_snackbar.dart';
 import 'package:deca_mobile/courses/data/models/course.dart';
+import 'package:deca_mobile/settings/cubit/app_settings_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-/// Man "Khám phá khóa học" — CHI XEM (khong bam vao tung khoa duoc nua, yeu
-/// cau nguoi dung 11/08/2026). Day la danh muc toan he thong (moi lop, ke ca
-/// lop nguoi dung khong ghi danh) nen khong mo duoc noi dung chi tiet
-/// (buoi hoc/video/de thi...) — chi con y nghia "xem co nhung khoa nao".
+/// Man "Khám phá khóa học" — danh muc toan he thong (moi lop, ke ca lop
+/// nguoi dung khong ghi danh). Bam vao 1 the mo trang chi tiet/marketing
+/// ([CourseDetailPage]) de xem gioi thieu + dang ky — DA KHOI PHUC thao tac
+/// bam-vao-xem-chi-tiet (yeu cau nguoi dung 14/09/2026, dao nguoc quyet dinh
+/// "chi xem" truoc do 11/08/2026: trang chi tiet lan nay la marketing/dang
+/// ky, KHONG phai noi dung buoi hoc/de thi cua lop da ghi danh nen khong con
+/// mau thuan voi ly do ban dau).
 ///
 /// Thiet ke theo ThietKe/Mobile/files/m-explore.html — GIU nguyen phan tim
-/// kiem/loc/luoi the theo nhom mon, nhung BO phan gia/GV/khuyen mai vi
-/// model Course khong co cac truong nay (khong bia du lieu).
+/// kiem/loc/luoi the theo nhom mon.
 class CatalogPage extends StatelessWidget {
   const CatalogPage({super.key});
 
@@ -337,7 +341,9 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fg = active ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant;
+    final fg = active
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSurfaceVariant;
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadii.rmd,
@@ -347,7 +353,9 @@ class _Chip extends StatelessWidget {
           color: active ? theme.colorScheme.primary : theme.colorScheme.surface,
           borderRadius: const BorderRadius.all(Radius.circular(AppRadii.pill)),
           border: Border.all(
-            color: active ? theme.colorScheme.primary : theme.colorScheme.outline,
+            color: active
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outline,
           ),
         ),
         child: Row(
@@ -360,7 +368,10 @@ class _Chip extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: 6),
             ],
@@ -401,7 +412,9 @@ class _SectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             subject,
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
         Text(
@@ -481,10 +494,10 @@ class _ExploreCourseCardState extends State<_ExploreCourseCard> {
       title: 'Đăng ký "${course.name}"',
       message: notEnough
           ? 'Cần ${money.format(price)} Xu, bạn chỉ có ${money.format(balance)} Xu — '
-              'không đủ để đăng ký.'
+                'không đủ để đăng ký.'
           : 'Đăng ký khóa "${course.name}" sẽ trừ ${money.format(price)} Xu'
-              '${balance != null ? ' (số dư hiện tại: ${money.format(balance)} Xu)' : ''}.'
-              ' Bạn có chắc chắn?',
+                '${balance != null ? ' (số dư hiện tại: ${money.format(balance)} Xu)' : ''}.'
+                ' Bạn có chắc chắn?',
       confirmText: notEnough ? 'Đã hiểu' : 'Đăng ký',
       danger: notEnough,
     );
@@ -492,8 +505,7 @@ class _ExploreCourseCardState extends State<_ExploreCourseCard> {
 
     setState(() => _enrolling = true);
     try {
-      final result =
-          await context.read<CatalogRepository>().enroll(course.id);
+      final result = await context.read<CatalogRepository>().enroll(course.id);
       if (!context.mounted) return;
       AppSnackBar.success(
         context,
@@ -516,117 +528,172 @@ class _ExploreCourseCardState extends State<_ExploreCourseCard> {
     final money = NumberFormat.decimalPattern('vi_VN');
     final purchasable = course.coinPrice != null && course.coinPrice! > 0;
     final showBuy = purchasable && !course.enrolled && _isStudent;
+    final registrable =
+        course.fullPrice != null && course.fullPrice! > 0 && !course.enrolled;
+    final hotline = context.watch<AppSettingsCubit>().state.supportHotline;
 
-    return Container(
-      width: 148,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: AppRadii.rmd,
-        border: Border.all(color: theme.colorScheme.outline),
+    return InkWell(
+      borderRadius: AppRadii.rmd,
+      onTap: () => Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => CourseDetailPage(classId: course.id),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: AppRadii.rsm,
-                ),
-                child: Icon(subjectIcon(course.subjectName), color: color, size: 14),
-              ),
-              const Spacer(),
-              _MiniStatusDot(status: course.status),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            course.name,
-            style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 1),
-          Text(
-            course.gradeLevel,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            dateRange ?? 'Mã ${course.code}',
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontFamily: 'monospace',
-              fontSize: 9.5,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (purchasable) ...[
-            const SizedBox(height: 6),
-            if (course.enrolled)
-              const _MiniPill(
-                label: 'Đã tham gia',
-                color: AppColors.success,
-                icon: Icons.check_circle_rounded,
-              )
-            else if (showBuy)
-              SizedBox(
-                width: double.infinity,
-                child: InkWell(
-                  onTap: _enrolling ? null : () => _confirmAndEnroll(context),
-                  borderRadius: AppRadii.rsm,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      borderRadius: AppRadii.rsm,
-                    ),
-                    child: _enrolling
-                        ? const SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 1.6,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            'Đăng ký · ${money.format(course.coinPrice)} Xu',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 9.5,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+      child: Container(
+        width: 148,
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+          borderRadius: AppRadii.rmd,
+          border: Border.all(color: theme.colorScheme.outline),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: AppRadii.rsm,
+                  ),
+                  child: Icon(
+                    subjectIcon(course.subjectName),
+                    color: color,
+                    size: 14,
                   ),
                 ),
-              )
-            else
-              _MiniPill(
-                label: '${money.format(course.coinPrice)} Xu',
-                color: AppColors.warningDark,
-                icon: Icons.monetization_on_outlined,
+                const Spacer(),
+                _MiniStatusDot(status: course.status),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              course.name,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 1),
+            Text(
+              course.gradeLevel,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              dateRange ?? 'Mã ${course.code}',
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontFamily: 'monospace',
+                fontSize: 9.5,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (purchasable) ...[
+              const SizedBox(height: 6),
+              if (course.enrolled)
+                const _MiniPill(
+                  label: 'Đã tham gia',
+                  color: AppColors.success,
+                  icon: Icons.check_circle_rounded,
+                )
+              else if (showBuy)
+                SizedBox(
+                  width: double.infinity,
+                  child: InkWell(
+                    onTap: _enrolling ? null : () => _confirmAndEnroll(context),
+                    borderRadius: AppRadii.rsm,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: AppRadii.rsm,
+                      ),
+                      child: _enrolling
+                          ? const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.6,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Đăng ký · ${money.format(course.coinPrice)} Xu',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 9.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                    ),
+                  ),
+                )
+              else
+                _MiniPill(
+                  label: '${money.format(course.coinPrice)} Xu',
+                  color: AppColors.warningDark,
+                  icon: Icons.monetization_on_outlined,
+                ),
+            ],
+            if (registrable) ...[
+              const Divider(height: AppSpacing.md),
+              Text(
+                '${money.format(course.fullPrice)}đ',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                ),
+              ),
+              if (hotline != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.call_outlined,
+                      size: 11,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 3),
+                    Flexible(
+                      child: Text(
+                        hotline,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 9.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
 class _MiniPill extends StatelessWidget {
-  const _MiniPill({required this.label, required this.color, required this.icon});
+  const _MiniPill({
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
 
   final String label;
   final Color color;
@@ -649,7 +716,11 @@ class _MiniPill extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 9.5),
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 9.5,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -723,7 +794,8 @@ IconData subjectIcon(String subject) {
   if (s.contains('lý') || s.contains('vật lí')) return Icons.hub_outlined;
   if (s.contains('hóa')) return Icons.science_outlined;
   if (s.contains('sinh')) return Icons.eco_outlined;
-  if (s.contains('anh') || s.contains('ngoại ngữ')) return Icons.translate_rounded;
+  if (s.contains('anh') || s.contains('ngoại ngữ'))
+    return Icons.translate_rounded;
   if (s.contains('văn')) return Icons.menu_book_outlined;
   return Icons.school_outlined;
 }

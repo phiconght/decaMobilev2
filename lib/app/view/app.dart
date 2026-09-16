@@ -25,6 +25,8 @@ import 'package:deca_mobile/schedule/data/attendance_repository.dart';
 import 'package:deca_mobile/schedule/data/leave_repository.dart';
 import 'package:deca_mobile/schedule/data/session_content_repository.dart';
 import 'package:deca_mobile/schedule/data/timetable_repository.dart';
+import 'package:deca_mobile/settings/cubit/app_settings_cubit.dart';
+import 'package:deca_mobile/settings/data/app_settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -92,6 +94,9 @@ class App extends StatelessWidget {
         RepositoryProvider<MarketingRepository>(
           create: (_) => MarketingRepositoryImpl(apiClient),
         ),
+        RepositoryProvider<AppSettingsRepository>(
+          create: (_) => AppSettingsRepositoryImpl(apiClient),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -109,6 +114,15 @@ class App extends StatelessWidget {
               context.read<NotificationsRepository>(),
               context.read<MessagesRepository>(),
             ),
+          ),
+          BlocProvider(
+            create: (context) {
+              final cubit = AppSettingsCubit(
+                context.read<AppSettingsRepository>(),
+              );
+              unawaited(cubit.load());
+              return cubit;
+            },
           ),
         ],
         child: MaterialApp(

@@ -15,30 +15,37 @@ class Course {
     this.pricePerSession,
     this.teacherNames = const [],
     this.coinPrice,
+    this.fullPrice,
+    this.deliveryMode,
+    this.coverImageUrl,
     this.enrolled = false,
   });
 
   factory Course.fromJson(Map<String, dynamic> json) => Course(
-        id: json['id'] as int,
-        code: json['code'] as String,
-        name: json['name'] as String,
-        subjectName: json['subjectName'] as String,
-        gradeLevel: json['gradeLevel'] as String,
-        status: json['status'] as String,
-        startDate: json['startDate'] == null
-            ? null
-            : DateTime.parse(json['startDate'] as String),
-        endDate: json['endDate'] == null
-            ? null
-            : DateTime.parse(json['endDate'] as String),
-        pricePerSession: (json['pricePerSession'] as num?)?.toDouble(),
-        teacherNames: (json['teacherNames'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            const [],
-        coinPrice: (json['coinPrice'] as num?)?.toInt(),
-        enrolled: json['enrolled'] as bool? ?? false,
-      );
+    id: json['id'] as int,
+    code: json['code'] as String,
+    name: json['name'] as String,
+    subjectName: json['subjectName'] as String,
+    gradeLevel: json['gradeLevel'] as String,
+    status: json['status'] as String,
+    startDate: json['startDate'] == null
+        ? null
+        : DateTime.parse(json['startDate'] as String),
+    endDate: json['endDate'] == null
+        ? null
+        : DateTime.parse(json['endDate'] as String),
+    pricePerSession: (json['pricePerSession'] as num?)?.toDouble(),
+    teacherNames:
+        (json['teacherNames'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        const [],
+    coinPrice: (json['coinPrice'] as num?)?.toInt(),
+    fullPrice: (json['fullPrice'] as num?)?.toDouble(),
+    deliveryMode: json['deliveryMode'] as String?,
+    coverImageUrl: json['coverImageUrl'] as String?,
+    enrolled: json['enrolled'] as bool? ?? false,
+  );
 
   final int id;
   final String code;
@@ -57,6 +64,15 @@ class Course {
 
   /// Gia Xu de HS tu dang ky. Null/0 = khong mo ban qua Xu.
   final int? coinPrice;
+
+  /// Gia tron goi dang ky bang chuyen khoan (khac coinPrice — VND that qua
+  /// chuyen khoan, khong phai Xu noi bo). Null = chua mo dang ky kieu nay.
+  final double? fullPrice;
+
+  /// 'ONLINE' | 'OFFLINE' — quyet dinh co hien QR tu dang ky hay chi hotline.
+  final String? deliveryMode;
+
+  final String? coverImageUrl;
 
   /// Nguoi dang dang nhap (HS) da tham gia lop nay chua.
   final bool enrolled;
